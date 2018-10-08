@@ -1,13 +1,17 @@
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+
+#include <stdio.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <iostream>
+#include <unistd.h>
+
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_lib.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h>
-#include <iostream>
-#include <bluetooth/hci.h>
+#include <bluetooth/l2cap.h>
 
 using namespace std;
 
@@ -19,70 +23,18 @@ using namespace std;
 
 int error = 0;
 
-int findConn(int s, int dev_id, long arg)
-{
-    struct hci_conn_list_req *cl;
-    struct hci_conn_info *ci;
-
-    if ((cl = (hci_conn_list_req *)malloc(HCI_MAX_DEV * sizeof(*ci) + sizeof(*cl))) == NULL)
-    {
-
-        perror("malloc");
-        error = true;
-        return 0;
-    }
-
-    cl->dev_id = dev_id;
-    cl->conn_num = HCI_MAX_DEV;
-    ci = cl->conn_info;
-
-    if (ioctl(s, HCIGETCONNLIST, (void *)cl))
-    {
-
-        perror("Could not get connection list");
-        error = true;
-        free(cl);
-        return 0;
-    }
-
-    int i;
-
-    for (i = 0; i < cl->conn_num; i++, ci++)
-    {
-        if (!bacmp((bdaddr_t *)arg, &ci->bdaddr))
-        {
-            free(cl);
-            return 1;
-        }
-    }
-
-    free(cl);
-
-    return 0;
-}
-
-int rssi(const char *address)
+int GetRSSI(const char *address)
 {
 
     struct hci_conn_info_req *cr;
     int8_t rssi;
-    int dd, dev_id;
-    bdaddr_t bdaddr;
-    str2ba(address, &bdaddr);
+    int dd;
+    int dev_id =0;
+    
     error = false;
 
-    dev_id = hci_for_each_dev(HCI_UP, findConn, (long)&bdaddr);
-    if (dev_id < 0)
-    {
-        if (error)
-        {
-            return BLUE_ERROR;
-        }
-        else
-        {
-            return BLUE_NOT_CONNECTED;
-        }
-    }
+    struct sockaddr_l2 addr = { 0 };
+    int sock, status;
 
     dd = hci_open_dev(dev_id);
     if (dd < 0)
@@ -98,7 +50,24 @@ int rssi(const char *address)
         return BLUE_ERROR;
     }
 
-    bacpy(&cr->bdaddr, &bdaddr);
+    sock = socket(AF_BLUETOOTH, SOCK_SEQPACKET, BTPROTO_L2CAP);
+    addr.l2_family = AF_BLUETOOTH;
+    //service discovery port
+    addr.l2_psm = htobs(0x1);
+    str2ba( address, &addr.l2_bdaddr );
+
+    // connect to target device
+    status = connect(sock, (struct sockaddr *)&addr, sizeof(addr));
+    if(status!=0)
+    {
+        perror("Could not connect to dev");
+        free(cr);
+        hci_close_dev(dd);
+        close(sock);
+        return BLUE_ERROR;
+    }
+
+    bacpy(&cr->bdaddr, &addr.l2_bdaddr);
     cr->type = ACL_LINK;
 
     if (ioctl(dd, HCIGETCONNINFO, (unsigned long)cr) < 0)
@@ -106,15 +75,24 @@ int rssi(const char *address)
         perror("Could not get connection info");
         free(cr);
         hci_close_dev(dd);
+        close(sock);
         return BLUE_ERROR;
     }
 
-    if (hci_read_rssi(dd, htobs(cr->conn_info->handle), &rssi, 1000) < 0)
+    int count = 30;
+    while( count>0 )
     {
-        perror("Could not read RSSI");
-        free(cr);
-        hci_close_dev(dd);
-        return BLUE_ERROR;
+        if (hci_read_rssi(dd, htobs(cr->conn_info->handle), &rssi, 0) < 0)
+        {
+            perror("Could not read RSSI");
+            free(cr);
+            hci_close_dev(dd);
+            close(sock);
+            return BLUE_ERROR;
+        }
+        cout <<"rssi: " << int(rssi) << endl;
+        sleep(1);
+        count--;
     }
 
     free(cr);
@@ -122,9 +100,7 @@ int rssi(const char *address)
     return rssi;
 }
 
-int main()
-
+int main(int argc, char **argv)
 {
-    for( int i=0; i< 20;i++)
-        cout << "rssi = " << rssi("88:19:08:2c:ea:c2") << endl;
+    GetRSSI("88:19:08:2C:EA:C2");
 }
