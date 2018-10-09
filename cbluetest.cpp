@@ -97,10 +97,12 @@ int GetRSSI(const char *address)
 
     free(cr);
     hci_close_dev(dd);
+    close(sock);
     return rssi;
 }
 
 int main(int argc, char **argv)
 {
-    GetRSSI("88:19:08:2C:EA:C2");
+    while(true)
+        GetRSSI("88:19:08:2C:EA:C2");
 }
