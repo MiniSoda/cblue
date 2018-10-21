@@ -1,9 +1,10 @@
-cmake_minimum_required (VERSION 2.8)
+cmake_minimum_required (VERSION 3.5)
 project (CBlue)
 
 #version number
 set (CBlue_VERSION_MAJOR 1)
 set (CBlue_VERSION_MINOR 0)
+set(CMAKE_CXX_STANDARD 14)
 
 #include the subdirectory containing our libs
 #add_subdirectory ()

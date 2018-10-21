@@ -7,6 +7,7 @@
 #include <stdbool.h>
 #include <iostream>
 #include <unistd.h>
+#include <regex>
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
@@ -22,6 +23,19 @@ using namespace std;
 #define BLUE_NOT_CONNECTED -1
 
 int error = 0;
+
+bool CheckAddr(const char *address)
+{
+    bool bCheck = false;
+
+    std::string s(address);
+    std::regex e("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$");
+    
+    if (std::regex_match (s,e))
+        bCheck = true;
+
+    return bCheck;
+}
 
 int GetRSSI(const char *address)
 {
@@ -103,6 +117,23 @@ int GetRSSI(const char *address)
 
 int main(int argc, char **argv)
 {
-    while(true)
-        GetRSSI("88:19:08:2C:EA:C2");
+    char szAddr[30] = { 0 };
+
+    int ch;
+    while ((ch = getopt(argc, argv, "ab:c")) != -1)
+    {
+        printf("optind: %d\n", optind);
+        switch (ch) {
+        
+        case 'b':
+            strcpy(szAddr, optarg+1);
+            break;
+        }
+    }
+
+    if( CheckAddr( szAddr ))
+    {
+        while(true)
+            GetRSSI(szAddr);
+    }
 }

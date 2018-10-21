@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/CBlue",
-            "args": [],
+            "args": ["-b F0:99:B6:B2:D5:0C"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
