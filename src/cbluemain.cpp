@@ -23,6 +23,7 @@ using namespace std;
 #define BLUE_NOT_CONNECTED -1
 
 int error = 0;
+bool bMainLoop = true;
 
 bool CheckAddr(const char *address)
 {
@@ -93,7 +94,7 @@ int GetRSSI(const char *address)
         return BLUE_ERROR;
     }
 
-    int count = 30;
+    int count = 10;
     while( count>0 )
     {
         if (hci_read_rssi(dd, htobs(cr->conn_info->handle), &rssi, 0) < 0)
@@ -117,23 +118,35 @@ int GetRSSI(const char *address)
 
 int main(int argc, char **argv)
 {
-    char szAddr[30] = { 0 };
-
     int ch;
+    std::string strDevAddr ="";
+    
+    if(argc <1)
+    {
+        cout<<"Please Input Bluetooth Address..."<<endl;
+    }
+   
     while ((ch = getopt(argc, argv, "ab:c")) != -1)
     {
-        printf("optind: %d\n", optind);
         switch (ch) {
-        
-        case 'b':
-            strcpy(szAddr, optarg+1);
-            break;
+            case 'b':
+                strDevAddr = optarg;
+                if(strDevAddr[0] == ' ')
+                {
+                    strDevAddr = strDevAddr.substr(1,strDevAddr.length());
+                }
+                break;
         }
     }
 
-    if( CheckAddr( szAddr ))
+    if( !CheckAddr( strDevAddr.c_str() ))
     {
-        while(true)
-            GetRSSI(szAddr);
+        cout<<"Bluetooth Address Invalid."<<endl;
     }
+    else
+    {
+        while(bMainLoop)
+            GetRSSI(strDevAddr.c_str());
+    }
+
 }
