@@ -1,6 +1,6 @@
 This project has a temporary name as "Blue Agent", it uses bluetooth as a proximity sensor to detect my phone when I am getting near to my cubic.  
 It is still under construct, the final goal is to use this sensor to unlock and lock my Windows PCs, and this program runs on my raspberry pi.
-so even when my pc is sleep mode it can also wake the pc up through network.
+So even when my pc is in sleep mode it can also wake the pc up through network.
 
 ### Installation ###
 
@@ -23,4 +23,5 @@ cmake .. && make all
 ```
 
 ***Cautions*** 
+
 This project is not finished yet, wear your helmet.
