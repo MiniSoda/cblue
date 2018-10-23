@@ -6,6 +6,7 @@ So even when my pc is in sleep mode it can also wake the pc up through network.
 
 ```bash
 sudo apt-get install libbluetooth-dev
+sudo apt-get install libssl-dev
 ```
 Once CMake has been install navigate to the root of the project and issue the following commands:
 ```bash
@@ -19,7 +20,7 @@ cmake .. && make all
 
 ### Usage ###
 ```bash
-./CBlue -b 12:34:56:78:90:AB
+./blueAgent -b 12:34:56:78:90:AB
 ```
 
 ***Cautions*** 

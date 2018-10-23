@@ -121,12 +121,15 @@ int GetRSSI(const char *address)
 int main(int argc, char **argv)
 { 
     CHelper m_helper;
-    unsigned char szText1[128];
-    unsigned char szText2[128];
+    unsigned char szText1[128] = {0};
+    unsigned char szText2[128] = {0};
+
     unsigned char szGreetings[30] = "Hello Cipher!";
     m_helper.cipherText( szText1, szGreetings, 13);
     m_helper.decipherText( szText2, szText1, 13);
     
+    printf("%s", szText2);
+    getchar();
 
     int ch;
     std::string strDevAddr ="";

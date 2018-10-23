@@ -21,14 +21,14 @@ CHelper::~CHelper()
 
 }
 
-int CHelper::cipherText(unsigned char *cipheredBuff, const unsigned char *szText, size_t size)
+int CHelper::cipherText(unsigned char *cipheredBuff, const unsigned char *szText, size_t size = 0)
 {
      AES_encrypt(szText, cipheredBuff, &enc_key);
      int length = (size/16 + 1) * 16;
      return length;
 }
 
-int CHelper::decipherText(unsigned char *decipheredBuff, const unsigned char *szText, size_t size)
+int CHelper::decipherText(unsigned char *decipheredBuff, const unsigned char *szText, size_t size = 0)
 {
     AES_decrypt(szText, decipheredBuff, &dec_key);
     int length = size-16;
