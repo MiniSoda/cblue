@@ -118,9 +118,50 @@ int GetRSSI(const char *address)
     return rssi;
 }
 
+std::string g_strEncrptKey;
+
 int main(int argc, char **argv)
 { 
     CHelper m_helper;
+    g_strEncrptKey = "";
+    char* pszEnc = nullptr;
+    char* pszDev = nullptr;
+
+    int ch;
+    std::string strDevAddr ="";
+    
+    
+    if(argc <1)
+    {
+        cout<<"Please Input Bluetooth Address..."<<endl;
+    }
+   
+    while ((ch = getopt(argc, argv, "m:b:")) != -1)
+    {
+        switch (ch) {
+            case 'b':
+            {
+                strDevAddr = pszDev;
+                if(strDevAddr[0] == ' ')
+                {
+                    strDevAddr = strDevAddr.substr(1,strDevAddr.length());
+                }
+                break;
+            }
+            case 'm':
+            {
+                g_strEncrptKey = pszEnc;
+                if(g_strEncrptKey[0] == ' ')
+                {
+                    g_strEncrptKey = g_strEncrptKey.substr(1,g_strEncrptKey.length());
+                }
+                break;
+            }
+        }
+    }
+
+    m_helper.setEncrptKey(g_strEncrptKey.c_str());
+
     unsigned char szText1[128] = {0};
     unsigned char szText2[128] = {0};
 
@@ -131,26 +172,6 @@ int main(int argc, char **argv)
     printf("%s", szText2);
     getchar();
 
-    int ch;
-    std::string strDevAddr ="";
-    
-    if(argc <1)
-    {
-        cout<<"Please Input Bluetooth Address..."<<endl;
-    }
-   
-    while ((ch = getopt(argc, argv, "ab:c")) != -1)
-    {
-        switch (ch) {
-            case 'b':
-                strDevAddr = optarg;
-                if(strDevAddr[0] == ' ')
-                {
-                    strDevAddr = strDevAddr.substr(1,strDevAddr.length());
-                }
-                break;
-        }
-    }
 
     if( !CheckAddr( strDevAddr.c_str() ))
     {
