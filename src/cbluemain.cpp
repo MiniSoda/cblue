@@ -136,12 +136,12 @@ int main(int argc, char **argv)
         cout<<"Please Input Bluetooth Address..."<<endl;
     }
    
-    while ((ch = getopt(argc, argv, "m:b:")) != -1)
+    while ((ch = getopt(argc, argv, "m:b:vh?")) != -1)
     {
         switch (ch) {
             case 'b':
             {
-                strDevAddr = pszDev;
+                strDevAddr = optarg;
                 if(strDevAddr[0] == ' ')
                 {
                     strDevAddr = strDevAddr.substr(1,strDevAddr.length());
@@ -150,7 +150,7 @@ int main(int argc, char **argv)
             }
             case 'm':
             {
-                g_strEncrptKey = pszEnc;
+                g_strEncrptKey = optarg;
                 if(g_strEncrptKey[0] == ' ')
                 {
                     g_strEncrptKey = g_strEncrptKey.substr(1,g_strEncrptKey.length());
