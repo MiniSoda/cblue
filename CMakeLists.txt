@@ -17,7 +17,6 @@ add_executable( ${PROJECT_NAME} ${SOURCE_FILES} )
 #include the subdirectory containing our headers
 target_include_directories(${PROJECT_NAME} PRIVATE include)
 
-
 # Indicate which libraries to include during the link process.
 target_link_libraries (${PROJECT_NAME} 
                 bluetooth 

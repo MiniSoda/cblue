@@ -40,5 +40,7 @@
         "__config": "cpp",
         "__nullptr": "cpp",
         "cstddef": "cpp"
-    }
+    },
+    "C_Cpp.errorSquiggles": "Disabled",
+    "C_Cpp.intelliSenseEngineFallback": "Enabled"
 }
