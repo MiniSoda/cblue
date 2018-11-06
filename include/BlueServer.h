@@ -15,10 +15,7 @@ class CBlueServer
         return m_pServer;
     }
 
-    ~CBlueServer()
-    {
-
-    }
+    ~CBlueServer( );
 
     void InitServer();
     bool Run();
@@ -36,8 +33,6 @@ class CBlueServer
         CL_CONNECTED
     };
 
-    CBlueServer( )
-    {
-
-    };
+    CBlueServer( );
+    
 };

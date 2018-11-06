@@ -6,10 +6,7 @@ set (CBlue_VERSION_MAJOR 1)
 set (CBlue_VERSION_MINOR 0)
 set (CMAKE_CXX_STANDARD 14)
 
-#link_directories(src)
-#add_subdirectory(src)
-
-set(SOURCE_FILES src/cbluemain.cpp src/helper.cpp include/BlueServer.h include/helper.h)
+set(SOURCE_FILES src/cbluemain.cpp src/helper.cpp src/BlueServer.cpp include/BlueServer.h include/helper.h)
 
 #indicate the entry point for the executable
 add_executable( ${PROJECT_NAME} ${SOURCE_FILES} )
