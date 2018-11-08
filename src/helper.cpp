@@ -34,3 +34,16 @@ int CHelper::decipherText(unsigned char *decipheredBuff, const unsigned char *sz
     int length = size-16;
     return length;
 }
+
+bool CHelper::CheckAddr(const char *address)
+{
+    bool bCheck = false;
+
+    std::string s(address);
+    std::regex e("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$");
+    
+    if (std::regex_match (s,e))
+        bCheck = true;
+
+    return bCheck;
+}

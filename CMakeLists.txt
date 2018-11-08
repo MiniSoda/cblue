@@ -6,7 +6,7 @@ set (CBlue_VERSION_MAJOR 1)
 set (CBlue_VERSION_MINOR 0)
 set (CMAKE_CXX_STANDARD 14)
 
-set(SOURCE_FILES src/cbluemain.cpp src/helper.cpp src/BlueServer.cpp include/BlueServer.h include/helper.h)
+set(SOURCE_FILES src/cbluemain.cpp src/helper.cpp src/BlueServer.cpp src/agent.cpp include/BlueServer.h include/helper.h include/agent.h)
 
 #indicate the entry point for the executable
 add_executable( ${PROJECT_NAME} ${SOURCE_FILES} )

@@ -2,6 +2,7 @@
 
 class CBlueServer
 {
+    
     static CBlueServer* m_pServer;
 
     public:
@@ -21,18 +22,8 @@ class CBlueServer
     bool Run();
 
     private:
-    short m_nPort;
-    std::string m_Address;
-
-    enum SERVER_STATE{
-        //waiting for client
-        WAITING,
-        //tray client connected
-        TC_CONNECTED,
-        //Credential Client connected
-        CL_CONNECTED
-    };
+    const short PORT = 8168;
+    
 
     CBlueServer( );
-    
 };
