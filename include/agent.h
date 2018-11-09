@@ -48,5 +48,6 @@ class blueAgent
 
     blueAgent();
     void onNotify();
-    
+
+    int GetRSSI(const char *address, int& rssi);
 };
