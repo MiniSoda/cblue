@@ -1,7 +1,7 @@
 #include "helper.h"
 
 
-CHelper::CHelper() : m_key("temporary key")
+CHelper::CHelper()
 {
     //aes encrpt
     OpenSSL_add_all_algorithms();

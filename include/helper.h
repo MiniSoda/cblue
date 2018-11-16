@@ -12,19 +12,19 @@ class CHelper
     CHelper();
     ~CHelper();
 
-    static int cipherText(unsigned char *cipheredBuff, const unsigned char *szText, size_t size);
-    static int decipherText(unsigned char *decipheredBuff, const unsigned char *szText, size_t size);
+    int cipherText(unsigned char *cipheredBuff, const unsigned char *szText, size_t size);
+    int decipherText(unsigned char *decipheredBuff, const unsigned char *szText, size_t size);
 
-    static void setEncrptKey(const char* szKey)
+    void setEncrptKey(const char* szKey)
     {
-        strcpy((char *)m_key, szKey);
+        strcpy((char*)m_key, szKey);
     }
 
-    static bool CheckAddr(const char *address);
+    bool CheckAddr(const char *address);
     
   private:
     /* A 256 bit key */
-    const static unsigned char m_key[128];
+    unsigned char m_key[128];
     AES_KEY enc_key, dec_key;
 };
 
@@ -42,10 +42,18 @@ struct COMM_PAKT{
 
 enum ClientType { CREDENTIAL = 0, TRAYICON };
 enum CMDType { CLI_REGISTER = 0, CLI_INQUIRE, SVR_NOTIFY };
-enum DevState { OUTOFRANGE=0, WITHIN };
+enum DevState { OUTOFRANGE=0, WITHIN, UNKNOWN };
 
 
 struct devInfo{
   int fd;
-  unsigned char LISTEN_ADDR[30];
+  char LISTEN_ADDR[30];
+  DevState state;
+
+  devInfo()
+  {
+    fd =0;
+    memset( LISTEN_ADDR,0,30);
+    state = DevState::UNKNOWN;
+  }
 };

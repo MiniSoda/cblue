@@ -86,14 +86,15 @@ int main(int argc, char **argv)
     getchar();
 
 
-    if( !CheckAddr( strDevAddr.c_str() ))
+    if( !m_helper.CheckAddr( strDevAddr.c_str() ))
     {
         cout<<"Bluetooth Address Invalid."<<endl;
     }
     else
     {
         while(bMainLoop)
-            GetRSSI(strDevAddr.c_str());
+            //GetRSSI(strDevAddr.c_str());
+            ;
     }
 
 }

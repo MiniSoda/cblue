@@ -1,14 +1,13 @@
 #include <unordered_map>
 #include <stack>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/hci_lib.h>
-#include <bluetooth/l2cap.h>
-
 #include "helper.h"
 
 using namespace std;
+
+#define BLUE_ERROR -1
+#define BLUE_ECONN -2
+#define BLUE_EREAD -3
 
 class blueAgent
 {
@@ -43,11 +42,16 @@ class blueAgent
     //unhandled device
     std::stack<int> devNew;
 
+    DevState m_state;
+
     //thread indicator
     bool m_bContinue;
 
     blueAgent();
-    void onNotify();
+    void onNotify()
+    {
+        
+    };
 
     int GetRSSI(const char *address, int& rssi);
 };
