@@ -1,3 +1,5 @@
+#include "agent.h"
+
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -8,9 +10,6 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_lib.h>
 #include <bluetooth/l2cap.h>
-
-#include "agent.h"
-
 
 blueAgent::blueAgent()
 {
@@ -80,6 +79,9 @@ int blueAgent::GetRSSI(const char *address, int& rssi)
     int result = 0;  
     bool error = false;
 
+    int count = 10;
+    int8_t readRSSI = 0;
+
     struct sockaddr_l2 addr = { 0 };
     int sock, status;
     DevState state = DevState::UNKNOWN;
@@ -90,14 +92,14 @@ int blueAgent::GetRSSI(const char *address, int& rssi)
     {
         perror("Could not open HCI device");
         result = BLUE_ERROR;
-        //goto CLEAR;
+        goto CLEAR;
     }
 
     if ((cr = (hci_conn_info_req *)malloc(sizeof(struct hci_conn_info_req) + sizeof(struct hci_conn_info))) == NULL)
     {
         perror("malloc");
         result = BLUE_ERROR;
-        //goto CLEAR;
+        goto CLEAR;
     }
 
     sock = socket(AF_BLUETOOTH, SOCK_SEQPACKET, BTPROTO_L2CAP);
@@ -112,7 +114,7 @@ int blueAgent::GetRSSI(const char *address, int& rssi)
     {
         perror("Could not connect to dev");
         result = BLUE_ECONN;
-        //goto CLEAR;
+        goto CLEAR;
     }
 
     bacpy(&cr->bdaddr, &addr.l2_bdaddr);
@@ -122,11 +124,8 @@ int blueAgent::GetRSSI(const char *address, int& rssi)
     {
         perror("Could not get connection info");
         result = BLUE_ECONN;
-        //goto CLEAR;
+        goto CLEAR;
     }
-
-    int count = 10;
-    int8_t readRSSI = 0;
 
     while( count>0 )
     {
