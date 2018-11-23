@@ -1,4 +1,9 @@
+#include <sys/types.h>
+#include <sys/socket.h>
+
 #include <string>
+
+#include "agent.h"
 
 class CBlueServer
 {
@@ -18,12 +23,14 @@ class CBlueServer
 
     ~CBlueServer( );
 
-    void InitServer();
+    bool InitServer();
     bool Run();
 
     private:
     const short PORT = 8168;
+    int m_Serverfd, pid;
     
+    blueAgent* m_pAgent;
 
     CBlueServer( );
 };

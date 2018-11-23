@@ -1,5 +1,3 @@
-#include "agent.h"
-
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -10,6 +8,9 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_lib.h>
 #include <bluetooth/l2cap.h>
+
+#include "agent.h"
+
 
 blueAgent::blueAgent()
 {
@@ -25,8 +26,8 @@ void blueAgent::addDevice(int fd, devInfo dev)
     }
     else
     {
-        devNew.push(fd);
-        devList.insert({fd,dev});
+        m_devNew.push(fd);
+        m_devList.insert({fd,dev});
     }
 }
 
@@ -38,39 +39,53 @@ void blueAgent::removeDevice(int fd)
     }
     else
     {
-        devList.erase(fd);
+        m_devList.erase(fd);
     }
 }
 
 void blueAgent::run()
 {
+    stack<thread*> threadlist;
     while(m_bContinue)
-    {
-
-        vector<thread> threadList;
-        while( devNew.size()!= 0 )
+    {      
+        while( m_devNew.size()!= 0 )
         {
             //add dev to listen queue
-            int fd = devNew.top();
+            int fd = m_devNew.top();
             //bluetooth address of the device
-            if(devList.end() != devList.find(fd))
+            if(m_devList.end() != m_devList.find(fd))
             {
-                auto devMAC = devList.at(fd).LISTEN_ADDR;
-
-                thread t([&]{
+                thread* t = new thread([&](){
                     int rssi = -255;
-                    GetRSSI(devMAC,rssi);
+                    GetRSSI(fd,rssi);
                 });
 
-                //threadList.push_back(t);
+                threadlist.push(t);
             }
             //remove
-            devNew.pop();
+            m_devNew.pop();
         }
+
+        if( m_devList.size == 0)
+        {
+            thread::sleep_for( chrono::seconds(1) );
+        }
+    }
+
+    while( !threadlist.empty())
+    {
+        thread* t;
+        t = threadlist.top();
+        threadlist.pop();
+        if(t->joinable())
+        {
+            t->join();  
+        }
+        delete t;
     }
 }
 
-int blueAgent::GetRSSI(const char *address, int& rssi)
+int blueAgent::GetRSSI(int fd, int& rssi)
 {
     struct hci_conn_info_req *cr;
     
@@ -79,13 +94,15 @@ int blueAgent::GetRSSI(const char *address, int& rssi)
     int result = 0;  
     bool error = false;
 
-    int count = 10;
+    
     int8_t readRSSI = 0;
 
     struct sockaddr_l2 addr = { 0 };
     int sock, status;
     DevState state = DevState::UNKNOWN;
     bool bStateChange = false;
+
+    auto devMAC = m_devList.at(fd).LISTEN_ADDR;
 
     dd = hci_open_dev(dev_id);
     if (dd < 0)
@@ -106,7 +123,7 @@ int blueAgent::GetRSSI(const char *address, int& rssi)
     addr.l2_family = AF_BLUETOOTH;
     //service discovery port
     addr.l2_psm = htobs(0x1);
-    str2ba( address, &addr.l2_bdaddr );
+    str2ba( devMAC, &addr.l2_bdaddr );
 
     // connect to target device
     status = connect(sock, (struct sockaddr *)&addr, sizeof(addr));
@@ -127,12 +144,12 @@ int blueAgent::GetRSSI(const char *address, int& rssi)
         goto CLEAR;
     }
 
-    while( count>0 )
+    while( true )
     {
         if (hci_read_rssi(dd, htobs(cr->conn_info->handle), &readRSSI, 0) < 0)
         {
             perror("Could not read RSSI");
-            result = BLUE_EREAD;
+            result = BLUE_ECONN;
             goto CLEAR;
         }
 
@@ -144,7 +161,8 @@ int blueAgent::GetRSSI(const char *address, int& rssi)
             {
                 state = DevState::OUTOFRANGE;
                 bStateChange = true;
-                onNotify();
+                onNotify( fd, state);
+                goto CLEAR;
             }
             else
             {
@@ -157,7 +175,8 @@ int blueAgent::GetRSSI(const char *address, int& rssi)
             {
                 state = DevState::WITHIN;
                 bStateChange = true;
-                onNotify();
+                onNotify( fd, state);
+                goto CLEAR;
             } 
             else
             {
@@ -166,11 +185,11 @@ int blueAgent::GetRSSI(const char *address, int& rssi)
         }
 
         sleep(1);
-        count--;
     }
 
 
 CLEAR:
+    m_bContinue = false;
     free(cr);
     hci_close_dev(dd);
     close(sock);
@@ -180,4 +199,21 @@ CLEAR:
 void blueAgent::stop()
 {
     m_bContinue = false;
+}
+
+void onNotify(int id, DevState state)
+{
+    auto devInfo = m_devList.find(id);
+    if( devInfo == m_devList.end())
+    {
+        //no dev found
+    }
+    else
+    {
+        //do nothing
+    }
+
+    COMM_PAKT send_buffer = {0};
+
+    send( fd, (void*)send_buffer, sizeof(COMM_PAKT), 0 );
 }

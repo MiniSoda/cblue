@@ -37,11 +37,11 @@ struct COMM_PAKT{
     unsigned char CLIENT_TYPE;
     unsigned char STATE;
     unsigned char LISTEN_ADDR[30];
-  };
+  }payload;
 };
 
 enum ClientType { CREDENTIAL = 0, TRAYICON };
-enum CMDType { CLI_REGISTER = 0, CLI_INQUIRE, SVR_NOTIFY };
+enum CMDType { CLI_REGISTER = 0, CLI_INQUIRE, SVR_NOTIFY, ACK };
 enum DevState { OUTOFRANGE=0, WITHIN, UNKNOWN };
 
 

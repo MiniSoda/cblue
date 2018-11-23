@@ -37,10 +37,10 @@ class blueAgent
     
 
     private:
-    std::unordered_map<int, devInfo> devList;
+    std::unordered_map<int, devInfo> m_devList;
 
     //unhandled device
-    std::stack<int> devNew;
+    std::stack<int> m_devNew;
 
     DevState m_state;
 
@@ -48,10 +48,8 @@ class blueAgent
     bool m_bContinue;
 
     blueAgent();
-    void onNotify()
-    {
-        
-    };
+    
+    void onNotify(int id, DevState state);
 
-    int GetRSSI(const char *address, int& rssi);
+    int GetRSSI(int fd, int& rssi);
 };
