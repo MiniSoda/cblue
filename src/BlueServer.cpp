@@ -73,8 +73,9 @@ bool CBlueServer::Run()
         }
             
         t = new thread( [&]( ) {
-
-            while(true)
+            bool wait_for_client = true;
+            
+            while(wait_for_client)
             {
                 int n;
                 COMM_PAKT buffer = { 0 };
@@ -84,12 +85,20 @@ bool CBlueServer::Run()
                 if (n < 0) 
                 {
                     perror("ERROR reading from socket");
+                    wait_for_client = false;
+                        
+                    shutdown(clientfd, SHUT_RDWR);
+                    close(clientfd);
                 }
                 
                 if( buffer.HEADER[0] != 0xFF && buffer.HEADER[1] != 0xE0)
                 {
                     //wrong header
                     perror("ERROR on packet");
+                    
+                    wait_for_client = false;
+                        
+                    shutdown(clientfd, SHUT_RDWR);
                     close(clientfd);
                 }
                 else
@@ -116,9 +125,30 @@ bool CBlueServer::Run()
                         if (n < 0)
                         {
                             perror("ERROR writing to socket");
+                            wait_for_client = false;
+                        
+                            shutdown(clientfd, SHUT_RDWR);
+                            close(clientfd);
                         }
                         break; 
-                    }                     
+                    }    
+                    case CLI_EXIT:
+                    {
+                        COMM_PAKT reply = {0};
+
+                        reply.HEADER[0]= 0xFF;
+                        reply.HEADER[1]= 0xE0;
+                        reply.HEADER[2]= 0xFF;
+                        reply.HEADER[3]= 0xE0;
+
+                        reply.CMD = CMDType::ACK;
+                        n = write(clientfd, (void*)&reply, sizeof(COMM_PAKT));
+ 
+                        wait_for_client = false;
+                        
+                        shutdown(clientfd, SHUT_RDWR);
+                        close(clientfd);
+                    }                 
                 }
             }
                 
