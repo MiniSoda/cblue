@@ -15,21 +15,14 @@
 #include <bluetooth/l2cap.h>
 
 #include "helper.h"
+#include "BlueServer.h"
 
 using namespace std;
 
 //#define HCI_MAX_DEV 64
 
-#define BLUE_ERROR 2
-
-#define BLUE_NOT_CONNECTED -1
-
 int error = 0;
 bool bMainLoop = true;
-
-
-
-
 
 std::string g_strEncrptKey;
 
@@ -85,6 +78,7 @@ int main(int argc, char **argv)
     printf("%s", szText2);
     getchar();
 
+    CBlueServer* pServer = &CBlueServer::getInstance();
 
     if( !m_helper.CheckAddr( strDevAddr.c_str() ))
     {
@@ -92,9 +86,8 @@ int main(int argc, char **argv)
     }
     else
     {
-        while(bMainLoop)
-            //GetRSSI(strDevAddr.c_str());
-            ;
+        pServer->InitServer();
+        pServer->Run();
     }
 
 }

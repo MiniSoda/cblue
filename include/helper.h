@@ -6,6 +6,8 @@
 
 #include <regex>
 
+#pragma once
+
 class CHelper
 {
   public:

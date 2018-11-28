@@ -12,20 +12,13 @@
 
 class CBlueServer
 {
-    
-    static CBlueServer* m_pServer;
-
 public:
-    CBlueServer* getInstance()
+    static CBlueServer& getInstance()
     {
-        if( m_pServer == nullptr )
-        {
-            m_pServer = new CBlueServer();
-        }
-        
-        return m_pServer;
+        static CBlueServer BlueServer;        
+        return BlueServer;
     }
-
+    
     ~CBlueServer( );
 
     bool InitServer();

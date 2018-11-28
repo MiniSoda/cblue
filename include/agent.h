@@ -3,6 +3,8 @@
 
 #include "helper.h"
 
+#pragma once
+
 using namespace std;
 
 #define BLUE_ERROR -1

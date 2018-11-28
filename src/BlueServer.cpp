@@ -97,7 +97,7 @@ bool CBlueServer::Run()
                     perror("ERROR on packet");
                     
                     wait_for_client = false;
-                        
+                    
                     shutdown(clientfd, SHUT_RDWR);
                     close(clientfd);
                 }
