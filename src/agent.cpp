@@ -11,14 +11,12 @@
 
 #include "agent.h"
 
-
-blueAgent::blueAgent()
+CBlueAgent::CBlueAgent()
 {
     m_bContinue = true;
-    m_state = DevState::UNKNOWN;
 }
 
-void blueAgent::addDevice(int fd, devInfo dev)
+void CBlueAgent::addDevice(int fd, unsigned char* pszAddr)
 {
     if (fd <= 0)
     {
@@ -26,12 +24,17 @@ void blueAgent::addDevice(int fd, devInfo dev)
     }
     else
     {
+        devInfo dev;
+        dev.fd = fd;
+        memcpy(dev.LISTEN_ADDR, pszAddr, 30);
+        dev.state = DevState::UNKNOWN;
+
         m_devNew.push(fd);
         m_devList.insert({fd,dev});
     }
 }
 
-void blueAgent::removeDevice(int fd)
+void CBlueAgent::removeDevice(int fd)
 {
     if (fd <= 0)
     {
@@ -43,7 +46,7 @@ void blueAgent::removeDevice(int fd)
     }
 }
 
-void blueAgent::run()
+void CBlueAgent::run()
 {
     stack<thread*> threadlist;
     while(m_bContinue)
@@ -66,9 +69,9 @@ void blueAgent::run()
             m_devNew.pop();
         }
 
-        if( m_devList.size == 0)
+        if( m_devList.size() == 0)
         {
-            thread::sleep_for( chrono::seconds(1) );
+            std::this_thread::sleep_for( chrono::seconds(1) );
         }
     }
 
@@ -85,7 +88,7 @@ void blueAgent::run()
     }
 }
 
-int blueAgent::GetRSSI(int fd, int& rssi)
+int CBlueAgent::GetRSSI(int fd, int& rssi)
 {
     struct hci_conn_info_req *cr;
     
@@ -196,14 +199,14 @@ CLEAR:
     return result;
 }
 
-void blueAgent::stop()
+void CBlueAgent::stop()
 {
     m_bContinue = false;
 }
 
-void onNotify(int id, DevState state)
+void CBlueAgent::onNotify(int fd, DevState state)
 {
-    auto devInfo = m_devList.find(id);
+    auto devInfo = m_devList.find(fd);
     if( devInfo == m_devList.end())
     {
         //no dev found
@@ -215,5 +218,5 @@ void onNotify(int id, DevState state)
 
     COMM_PAKT send_buffer = {0};
 
-    send( fd, (void*)send_buffer, sizeof(COMM_PAKT), 0 );
+    send( fd, (void*)&send_buffer, sizeof(COMM_PAKT), 0 );
 }

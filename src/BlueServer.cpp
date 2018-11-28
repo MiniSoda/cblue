@@ -1,5 +1,6 @@
 #include "BlueServer.h"
 
+
 CBlueServer::CBlueServer( )
 {
 
@@ -15,9 +16,9 @@ bool CBlueServer::InitServer()
     struct sockaddr_in serv_addr;
     bool bInit = false;
     m_Serverfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd < 0) 
+    if (m_Serverfd < 0) 
     {
-        error("ERROR opening socket");
+        perror("ERROR opening socket");
         close(m_Serverfd);
         return bInit;
     }
@@ -25,7 +26,7 @@ bool CBlueServer::InitServer()
     int enable = 1;
     if (setsockopt(m_Serverfd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
     {
-        error("setsockopt(SO_REUSEADDR) failed");
+        perror("setsockopt(SO_REUSEADDR) failed");
         close(m_Serverfd);
         return bInit;
     }
@@ -37,56 +38,58 @@ bool CBlueServer::InitServer()
     serv_addr.sin_port = htons(PORT);
     if (bind(m_Serverfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) 
     {
-        error("ERROR on binding");
-        m_Serverfd
+        perror("ERROR on binding");
+        close(m_Serverfd);
         return bInit;
     }
             
     listen(m_Serverfd,5);
     bInit = true;
 
-    m_pAgent = blueAgent::getInstance();
+    m_pAgent = &CBlueAgent::getInstance();
 
     return bInit;
 }
 
-bool Run()
+bool CBlueServer::Run()
 {
     struct sockaddr_in cli_addr;
-    clilen = sizeof(cli_addr);
-    stack<thread*> threadlist;
+    socklen_t clilen = sizeof(cli_addr);
+    stack<std::thread*> threadlist;
 
     while(true)
     { 
-        thread* t;
+        std::thread* t;
+        //int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
         int clientfd = accept(m_Serverfd, 
             (struct sockaddr *) &cli_addr, &clilen);
         if (clientfd < 0) 
         {
-            error("ERROR on accept");
+            perror("ERROR on accept");
         }
         else
         {
             //do nothing
         }
             
-        t = new thread( [&](clientfd) {
+        t = new thread( [&]( ) {
 
             while(true)
             {
                 int n;
                 COMM_PAKT buffer = { 0 };
-                    
-                n = read(clientfd,buffer,sizeof(buffer));
+                size_t len = sizeof(COMM_PAKT);
+                
+                n = read(clientfd, (void*)&buffer, len);
                 if (n < 0) 
                 {
-                    error("ERROR reading from socket");
+                    perror("ERROR reading from socket");
                 }
                 
                 if( buffer.HEADER[0] != 0xFF && buffer.HEADER[1] != 0xE0)
                 {
                     //wrong header
-                    error("ERROR on packet");
+                    perror("ERROR on packet");
                     close(clientfd);
                 }
                 else
@@ -100,6 +103,7 @@ bool Run()
                     case CLI_INQUIRE:
                     {
                         COMM_PAKT reply = {0};
+
                         reply.HEADER[0]= 0xFF;
                         reply.HEADER[1]= 0xE0;
                         reply.HEADER[2]= 0xFF;
@@ -108,10 +112,10 @@ bool Run()
                         reply.CMD = CMDType::ACK;
 
                         m_pAgent->addDevice(clientfd, buffer.payload.LISTEN_ADDR);
-                        n = write(sock, (void*)reply, sizeof(COMM_PAKT));
+                        n = write(clientfd, (void*)&reply, sizeof(COMM_PAKT));
                         if (n < 0)
                         {
-                            error("ERROR writing to socket");
+                            perror("ERROR writing to socket");
                         }
                         break; 
                     }                     

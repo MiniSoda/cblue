@@ -46,6 +46,7 @@ enum DevState { OUTOFRANGE=0, WITHIN, UNKNOWN };
 
 
 struct devInfo{
+  
   int fd;
   char LISTEN_ADDR[30];
   DevState state;

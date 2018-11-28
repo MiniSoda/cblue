@@ -9,26 +9,23 @@ using namespace std;
 #define BLUE_ECONN -2
 #define BLUE_EREAD -3
 
-class blueAgent
+class CBlueAgent
 {
     public:
-    static blueAgent* m_pAgent;
 
-    public:
-    blueAgent* getInstance()
+    static CBlueAgent& getInstance()
     {
-        if( m_pAgent == nullptr )
-        {
-            m_pAgent = new blueAgent();
-        }
-        
-        return m_pAgent;
+        static CBlueAgent theSingleAgent;
+        return theSingleAgent; 
     }
 
     
-    ~blueAgent();
+    ~CBlueAgent()
+    {
+        
+    }
 
-    void addDevice(int fd, devInfo dev);
+    void addDevice(int fd, unsigned char* pszAddr);
     void removeDevice(int fd);
 
     void run();
@@ -37,19 +34,18 @@ class blueAgent
     
 
     private:
+
     std::unordered_map<int, devInfo> m_devList;
 
     //unhandled device
     std::stack<int> m_devNew;
 
-    DevState m_state;
-
     //thread indicator
     bool m_bContinue;
 
-    blueAgent();
+    CBlueAgent();
     
-    void onNotify(int id, DevState state);
+    void onNotify(int fd, DevState state);
 
     int GetRSSI(int fd, int& rssi);
 };
