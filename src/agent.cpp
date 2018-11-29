@@ -192,7 +192,6 @@ int CBlueAgent::GetRSSI(int fd, int& rssi)
 
 
 CLEAR:
-    m_bContinue = false;
     free(cr);
     hci_close_dev(dd);
     close(sock);

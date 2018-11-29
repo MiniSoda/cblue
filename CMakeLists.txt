@@ -30,4 +30,7 @@ target_link_libraries (${PROJECT_NAME}
                 crypto
                 )
 
-install (TARGETS blueAgent DESTINATION bin)
+add_subdirectory(test)
+
+# install exe to bin
+# install (TARGETS blueAgent DESTINATION bin)

@@ -5,11 +5,30 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(gdb) Launch",
+            "name": "(gdb) Launch Server",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/blueAgent",
             "args": ["-m password2enc", "-b F0:99:B6:B2:D5:0C"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": true,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "(gdb) Launch Client",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/test/client_test",
+            "args": [""],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

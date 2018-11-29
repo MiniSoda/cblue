@@ -79,6 +79,7 @@ int main(int argc, char **argv)
     getchar();
 
     CBlueServer* pServer = &CBlueServer::getInstance();
+    
 
     if( !m_helper.CheckAddr( strDevAddr.c_str() ))
     {

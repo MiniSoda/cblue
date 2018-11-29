@@ -57,6 +57,12 @@ bool CBlueServer::Run()
     socklen_t clilen = sizeof(cli_addr);
     stack<std::thread*> threadlist;
 
+    thread bt(
+        [&](){
+            CBlueAgent::getInstance().run();
+        }
+    );
+
     while(true)
     { 
         std::thread* t;
@@ -165,5 +171,12 @@ bool CBlueServer::Run()
             t->join();  
         }
         delete t;
+    }
+    
+    CBlueAgent::getInstance().stop();
+
+    if(bt.joinable())
+    {
+        bt.join();
     }
 }
