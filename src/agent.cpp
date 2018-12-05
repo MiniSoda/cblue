@@ -58,9 +58,56 @@ void CBlueAgent::run()
             //bluetooth address of the device
             if(m_devList.end() != m_devList.find(fd))
             {
-                thread* t = new thread([&](){
-                    int rssi = -255;
-                    GetRSSI(fd,rssi);
+                thread* t = new thread([&]()
+                {
+                    int nRet = 0;
+                    DevState state = DevState::UNKNOWN;
+
+                    while(nRet != BLUE_ERROR)
+                    {
+                        bool bStateChange = false;
+
+                        int rssi = -255;
+                        nRet = GetRSSI(fd,rssi);
+
+                        if( (nRet == BLUE_ECONN) || (rssi < -10) )
+                        {
+                            if(state != DevState::OUTOFRANGE)
+                            {
+                                state = DevState::OUTOFRANGE;
+                                bStateChange = true;
+                                onNotify( fd, state);
+                            }
+                            else
+                            {
+                                bStateChange = false;
+                            }
+                        }
+                        else
+                        {
+                            if( (nRet == 0) && (state != DevState::WITHIN) )
+                            {
+                                state = DevState::WITHIN;
+                                bStateChange = true;
+                                onNotify( fd, state);
+                            } 
+                            else
+                            {
+                                bStateChange = false;
+                            }
+                        }
+
+                        if( m_devList.end() == m_devList.find(fd))
+                        {
+                            break;
+                        }
+                        else
+                        {
+
+                        }
+
+                        this_thread::sleep_for(chrono::seconds(2));
+                    }
                 });
 
                 threadlist.push(t);
@@ -102,8 +149,7 @@ int CBlueAgent::GetRSSI(int fd, int& rssi)
 
     struct sockaddr_l2 addr = { 0 };
     int sock, status;
-    DevState state = DevState::UNKNOWN;
-    bool bStateChange = false;
+    
 
     auto devMAC = m_devList.at(fd).LISTEN_ADDR;
 
@@ -147,54 +193,21 @@ int CBlueAgent::GetRSSI(int fd, int& rssi)
         goto CLEAR;
     }
 
-    while( true )
+
+    if (hci_read_rssi(dd, htobs(cr->conn_info->handle), &readRSSI, 0) < 0)
     {
-        if (hci_read_rssi(dd, htobs(cr->conn_info->handle), &readRSSI, 0) < 0)
-        {
-            perror("Could not read RSSI");
-            result = BLUE_ECONN;
-            goto CLEAR;
-        }
-
-        rssi = readRSSI;
-
-        if( rssi < -10 )
-        {
-            if(state != DevState::OUTOFRANGE)
-            {
-                state = DevState::OUTOFRANGE;
-                bStateChange = true;
-                onNotify( fd, state);
-                goto CLEAR;
-            }
-            else
-            {
-                bStateChange = false;
-            }
-        }
-        else
-        {
-            if(state != DevState::WITHIN)
-            {
-                state = DevState::WITHIN;
-                bStateChange = true;
-                onNotify( fd, state);
-                goto CLEAR;
-            } 
-            else
-            {
-                bStateChange = false;
-            }
-        }
-
-        sleep(1);
+        perror("Could not read RSSI");
+        result = BLUE_ECONN;
+        goto CLEAR;
     }
 
+    rssi = readRSSI;
 
 CLEAR:
     free(cr);
     hci_close_dev(dd);
     close(sock);
+
     return result;
 }
 
@@ -216,6 +229,8 @@ void CBlueAgent::onNotify(int fd, DevState state)
     }
 
     COMM_PAKT send_buffer = {0};
+    send_buffer.CMD = CMDType::SVR_NOTIFY;
+    send_buffer.payload.STATE = state;
 
-    send( fd, (void*)&send_buffer, sizeof(COMM_PAKT), 0 );
+    write( fd, (void*)&send_buffer, sizeof(COMM_PAKT) );
 }

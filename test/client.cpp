@@ -41,7 +41,6 @@ int main(int argc, char **argv)
 
     packet.CMD = CMDType::CLI_REGISTER;
 
-    
     strcpy(szAddr,std::string("F0:99:B6:92:84:E9").c_str());
     memcpy(&packet.payload.LISTEN_ADDR,szAddr, strlen(szAddr));
 
@@ -64,23 +63,27 @@ int main(int argc, char **argv)
         printf("child {%d} connected \n", getpid());
     }
     
-    
+    int sl = (random() % 10 ) +  1;
+    num++;
+    sleep(sl);
+
+    write( sockfd, (void*)&packet, sizeof(COMM_PAKT));
+
     while(1)
     {
-        int sl = (random() % 10 ) +  1;
-        num++;
-        sleep(sl);
-
-        write( sockfd, (void*)&packet, sizeof(COMM_PAKT));
-
         COMM_PAKT recv_buffer = {0};
         read( sockfd, (void*)&recv_buffer, sizeof(COMM_PAKT));
         if( recv_buffer.CMD == CMDType::ACK)
         {
             printf("ACK Recv OK \n");
-            break;
+        }
+        if( recv_buffer.CMD == CMDType::SVR_NOTIFY)
+        {
+            if( recv_buffer.payload.STATE == DevState::WITHIN )
+                printf("DEV IN RANGE \n");
+            if( recv_buffer.payload.STATE == DevState::OUTOFRANGE )
+                printf("DEV OUTOFRANGE\n");
         }
     }
- 
     return 0;
 }
