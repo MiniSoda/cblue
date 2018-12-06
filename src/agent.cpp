@@ -79,15 +79,15 @@ void CBlueAgent::run()
                         if( !bDevInit )
                             nRet = InitBlueDev(fd);
 
-                        if( nRet != 0 )
-                        {
-                            this_thread::sleep_for(chrono::seconds(2));
-                            continue;
-                        }
-                        else if( nRet == BLUE_ECONN )
+                        if( nRet == BLUE_ECONN )
                         {
                             state = DevState::OUTOFRANGE;
                             onNotify( fd, state);
+                        }
+                        else if( nRet != 0 )
+                        {
+                            this_thread::sleep_for(chrono::seconds(2));
+                            continue;
                         }
                         else
                         {
