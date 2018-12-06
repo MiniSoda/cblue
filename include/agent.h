@@ -40,6 +40,10 @@ class CBlueAgent
 
     private:
 
+    struct hci_conn_info_req *cr;
+    //device discriptor
+    int m_dd; 
+    
     std::unordered_map<int, devInfo> m_devList;
 
     //unhandled device
@@ -52,5 +56,7 @@ class CBlueAgent
     
     void onNotify(int fd, DevState state);
 
-    int GetRSSI(int fd, int& rssi);
+    int InitBlueDev(int fd);
+
+    int GetRSSI(int& rssi);
 };

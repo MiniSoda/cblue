@@ -27,8 +27,8 @@ public:
 private:
     const short PORT = 8168;
     int m_Serverfd, pid;
-    bool m_bfd;
-    vector<int> m_sockets;
+    bool m_bNewfd;
+    deque<int> m_sockets;
     
     CBlueAgent* m_pAgent;
     

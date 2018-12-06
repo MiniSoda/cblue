@@ -74,9 +74,13 @@ bool CBlueServer::Run()
         }
     );
 
+    if(t.joinable())
+    {
+        t.detach();
+    }
+
     while(true)
     { 
-        std::thread* t;
         //int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
         int clientfd = accept(m_Serverfd, 
             (struct sockaddr *) &cli_addr, &clilen);
@@ -88,7 +92,7 @@ bool CBlueServer::Run()
         else
         {
             m_sockets.push_back(clientfd);
-            m_bfd = true;
+            m_bNewfd = true;
         }
     }
 
@@ -100,11 +104,6 @@ bool CBlueServer::Run()
     {
         bt.join();
     }
-
-    if(t.joinable())
-    {
-        t.join();
-    }
 }
 
 void CBlueServer::polling( )
@@ -114,7 +113,14 @@ void CBlueServer::polling( )
     while(wait_for_client)
     {
         int timeout = 500; 
-        int fd_size = m_sockets.size();   
+        int fd_size = m_sockets.size(); 
+
+        if( fd_size == 0 )
+        {
+            this_thread::sleep_for(chrono::seconds(1));
+            continue;
+        }
+
         struct pollfd pollfds[fd_size];  
 
         //设置监控sockfd
@@ -124,11 +130,11 @@ void CBlueServer::polling( )
             pollfds[index].fd = fd;
             pollfds[index].events = POLLIN|POLLRDHUP;    
             index++;
-            if( index>0 ) m_bfd = false;
+            if( index>0 ) m_bNewfd = false;
         }
                  //设置监控的事件  
     
-        while( !m_bfd )
+        while( !m_bNewfd && (index != 0) )
         { 
             int poll_val = poll( pollfds, fd_size, timeout);
             if( poll_val >0 )
@@ -148,19 +154,12 @@ void CBlueServer::polling( )
                         if (n < 0) 
                         {
                             perror("ERROR reading from socket");
-                            wait_for_client = false;
-                                
-                            shutdown(clientfd, SHUT_RDWR);
-                            close(clientfd);
                         }
                         
                         if( buffer.HEADER[0] != 0xFF && buffer.HEADER[1] != 0xE0)
                         {
                             //wrong header
                             perror("ERROR on packet");
-                            
-                            wait_for_client = false;
-                            
                             shutdown(clientfd, SHUT_RDWR);
                             close(clientfd);
                         }
@@ -191,7 +190,6 @@ void CBlueServer::polling( )
                                         m_pAgent->removeDevice(clientfd);
                                         shutdown(clientfd, SHUT_RDWR);
                                         close(clientfd);
-                                        
                                     }
                                     break; 
                                 }    
@@ -226,6 +224,13 @@ void CBlueServer::polling( )
                         m_pAgent->removeDevice(clientfd);
                         //shutdown(clientfd, SHUT_RDWR);
                         close(clientfd);
+                        
+                        auto iter = m_sockets.begin()+i;
+                        if( iter != m_sockets.end() )
+                        {
+                            m_sockets.erase(iter);
+                        }
+                        index--;
                     }
                 }
             }

@@ -48,9 +48,8 @@ void CBlueAgent::removeDevice(int fd)
 
 void CBlueAgent::run()
 {
-    stack<thread*> threadlist;
     while(m_bContinue)
-    {      
+    {
         while( m_devNew.size()!= 0 )
         {
             //add dev to listen queue
@@ -58,17 +57,45 @@ void CBlueAgent::run()
             //bluetooth address of the device
             if(m_devList.end() != m_devList.find(fd))
             {
-                thread* t = new thread([&]()
+                thread t([&]()
                 {
                     int nRet = 0;
+                    bool bDevInit = false;
                     DevState state = DevState::UNKNOWN;
 
                     while(nRet != BLUE_ERROR)
                     {
-                        bool bStateChange = false;
+                        bool bStateChange = false; 
+
+                        if( m_devList.end() == m_devList.find(fd))
+                        {
+                            break;
+                        }
+                        else
+                        {
+
+                        }
+
+                        if( !bDevInit )
+                            nRet = InitBlueDev(fd);
+
+                        if( nRet != 0 )
+                        {
+                            this_thread::sleep_for(chrono::seconds(2));
+                            continue;
+                        }
+                        else if( nRet == BLUE_ECONN )
+                        {
+                            state = DevState::OUTOFRANGE;
+                            onNotify( fd, state);
+                        }
+                        else
+                        {
+                            bDevInit = true;
+                        }
 
                         int rssi = -255;
-                        nRet = GetRSSI(fd,rssi);
+                        nRet = GetRSSI(rssi);
 
                         if( (nRet == BLUE_ECONN) || (rssi < -10) )
                         {
@@ -97,20 +124,11 @@ void CBlueAgent::run()
                             }
                         }
 
-                        if( m_devList.end() == m_devList.find(fd))
-                        {
-                            break;
-                        }
-                        else
-                        {
-
-                        }
-
                         this_thread::sleep_for(chrono::seconds(2));
                     }
                 });
 
-                threadlist.push(t);
+                t.detach();
             }
             //remove
             m_devNew.pop();
@@ -121,24 +139,28 @@ void CBlueAgent::run()
             std::this_thread::sleep_for( chrono::seconds(1) );
         }
     }
-
-    while( !threadlist.empty())
-    {
-        thread* t;
-        t = threadlist.top();
-        threadlist.pop();
-        if(t->joinable())
-        {
-            t->join();  
-        }
-        delete t;
-    }
 }
 
-int CBlueAgent::GetRSSI(int fd, int& rssi)
+int CBlueAgent::GetRSSI( int& rssi )
 {
-    struct hci_conn_info_req *cr;
-    
+    int8_t read = 0;
+    int result = 0;
+    if (hci_read_rssi(m_dd, htobs(cr->conn_info->handle), &read, 0) < 0)
+    {
+        perror("Could not read RSSI");
+        result = BLUE_ECONN;
+    }
+    rssi = read;
+    return result;
+}
+
+void CBlueAgent::stop()
+{
+    m_bContinue = false;
+}
+
+int CBlueAgent::InitBlueDev(int fd)
+{       
     int dd;
     int dev_id =0;
     int result = 0;  
@@ -158,14 +180,16 @@ int CBlueAgent::GetRSSI(int fd, int& rssi)
     {
         perror("Could not open HCI device");
         result = BLUE_ERROR;
-        goto CLEAR;
+        error = true;
     }
+
+    m_dd = dd;
 
     if ((cr = (hci_conn_info_req *)malloc(sizeof(struct hci_conn_info_req) + sizeof(struct hci_conn_info))) == NULL)
     {
         perror("malloc");
         result = BLUE_ERROR;
-        goto CLEAR;
+        error = true;
     }
 
     sock = socket(AF_BLUETOOTH, SOCK_SEQPACKET, BTPROTO_L2CAP);
@@ -180,7 +204,7 @@ int CBlueAgent::GetRSSI(int fd, int& rssi)
     {
         perror("Could not connect to dev");
         result = BLUE_ECONN;
-        goto CLEAR;
+        error = true;
     }
 
     bacpy(&cr->bdaddr, &addr.l2_bdaddr);
@@ -190,30 +214,17 @@ int CBlueAgent::GetRSSI(int fd, int& rssi)
     {
         perror("Could not get connection info");
         result = BLUE_ECONN;
-        goto CLEAR;
+        error = true;
     }
 
-
-    if (hci_read_rssi(dd, htobs(cr->conn_info->handle), &readRSSI, 0) < 0)
+    if(error)
     {
-        perror("Could not read RSSI");
-        result = BLUE_ECONN;
-        goto CLEAR;
+        free(cr);
+        hci_close_dev(dd);
+        close(sock);
     }
-
-    rssi = readRSSI;
-
-CLEAR:
-    free(cr);
-    hci_close_dev(dd);
-    close(sock);
 
     return result;
-}
-
-void CBlueAgent::stop()
-{
-    m_bContinue = false;
 }
 
 void CBlueAgent::onNotify(int fd, DevState state)
