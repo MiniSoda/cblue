@@ -3,6 +3,7 @@
 #include <unistd.h>
 
 #include <thread>
+#include <iostream>
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
@@ -62,6 +63,7 @@ void CBlueAgent::run()
                     int nRet = 0;
                     bool bDevInit = false;
                     DevState state = DevState::UNKNOWN;
+                    DEVICE_HANDLE dev_handle = { 0 };
 
                     while(nRet != BLUE_ERROR)
                     {
@@ -77,14 +79,14 @@ void CBlueAgent::run()
                         }
 
                         if( !bDevInit )
-                            nRet = InitBlueDev(fd);
+                            nRet = InitBlueDev(fd, dev_handle);
 
                         if( nRet == BLUE_ECONN )
                         {
                             state = DevState::OUTOFRANGE;
                             onNotify( fd, state);
                         }
-                        else if( nRet != 0 )
+                        else if( nRet == BLUE_ERROR )
                         {
                             this_thread::sleep_for(chrono::seconds(2));
                             continue;
@@ -95,7 +97,7 @@ void CBlueAgent::run()
                         }
 
                         int rssi = -255;
-                        nRet = GetRSSI(rssi);
+                        nRet = GetRSSI(rssi, dev_handle);
 
                         if( (nRet == BLUE_ECONN) || (rssi < -10) )
                         {
@@ -123,9 +125,10 @@ void CBlueAgent::run()
                                 bStateChange = false;
                             }
                         }
-
+                        
                         this_thread::sleep_for(chrono::seconds(2));
                     }
+                    DisposeHandle( dev_handle );
                 });
 
                 t.detach();
@@ -141,11 +144,11 @@ void CBlueAgent::run()
     }
 }
 
-int CBlueAgent::GetRSSI( int& rssi )
+int CBlueAgent::GetRSSI( int& rssi ,DEVICE_HANDLE& dh)
 {
     int8_t read = 0;
     int result = 0;
-    if (hci_read_rssi(m_dd, htobs(cr->conn_info->handle), &read, 0) < 0)
+    if (hci_read_rssi(dh.dev_discriptor, htobs(dh.cr->conn_info->handle), &read, 0) < 0)
     {
         perror("Could not read RSSI");
         result = BLUE_ECONN;
@@ -159,9 +162,8 @@ void CBlueAgent::stop()
     m_bContinue = false;
 }
 
-int CBlueAgent::InitBlueDev(int fd)
+int CBlueAgent::InitBlueDev(int fd, DEVICE_HANDLE& dh)
 {       
-    int dd;
     int dev_id =0;
     int result = 0;  
     bool error = false;
@@ -175,31 +177,29 @@ int CBlueAgent::InitBlueDev(int fd)
 
     auto devMAC = m_devList.at(fd).LISTEN_ADDR;
 
-    dd = hci_open_dev(dev_id);
-    if (dd < 0)
+    dh.dev_discriptor = hci_open_dev(dev_id);
+    if (dh.dev_discriptor < 0)
     {
         perror("Could not open HCI device");
         result = BLUE_ERROR;
         error = true;
     }
 
-    m_dd = dd;
-
-    if ((cr = (hci_conn_info_req *)malloc(sizeof(struct hci_conn_info_req) + sizeof(struct hci_conn_info))) == NULL)
+    if ((dh.cr = (hci_conn_info_req *)malloc(sizeof(struct hci_conn_info_req) + sizeof(struct hci_conn_info))) == NULL)
     {
         perror("malloc");
         result = BLUE_ERROR;
         error = true;
     }
 
-    sock = socket(AF_BLUETOOTH, SOCK_SEQPACKET, BTPROTO_L2CAP);
+    dh.blue_sock = socket(AF_BLUETOOTH, SOCK_SEQPACKET, BTPROTO_L2CAP);
     addr.l2_family = AF_BLUETOOTH;
     //service discovery port
     addr.l2_psm = htobs(0x1);
     str2ba( devMAC, &addr.l2_bdaddr );
 
     // connect to target device
-    status = connect(sock, (struct sockaddr *)&addr, sizeof(addr));
+    status = connect(dh.blue_sock, (struct sockaddr *)&addr, sizeof(addr));
     if(status!=0)
     {
         perror("Could not connect to dev");
@@ -207,24 +207,31 @@ int CBlueAgent::InitBlueDev(int fd)
         error = true;
     }
 
-    bacpy(&cr->bdaddr, &addr.l2_bdaddr);
-    cr->type = ACL_LINK;
+    bacpy(&dh.cr->bdaddr, &addr.l2_bdaddr);
+    dh.cr->type = ACL_LINK;
 
-    if ( ioctl(dd, HCIGETCONNINFO, (unsigned long)(cr)) < 0 )
+    if ( ioctl(dh.dev_discriptor, HCIGETCONNINFO, (unsigned long)(dh.cr)) < 0 )
     {
         perror("Could not get connection info");
         result = BLUE_ECONN;
         error = true;
     }
 
-    if(error)
-    {
-        free(cr);
-        hci_close_dev(dd);
-        close(sock);
-    }
-
     return result;
+}
+
+void CBlueAgent::DisposeHandle(DEVICE_HANDLE& dh)
+{
+    if( (dh.blue_sock != 0) && (dh.cr != nullptr) && (dh.dev_discriptor != 0) )
+    {
+        close( dh.blue_sock );
+        hci_close_dev( dh.dev_discriptor );
+        free( dh.cr);
+
+        dh.blue_sock = 0;
+        dh.dev_discriptor = 0;
+        dh.cr = nullptr;
+    }
 }
 
 void CBlueAgent::onNotify(int fd, DevState state)
@@ -242,6 +249,9 @@ void CBlueAgent::onNotify(int fd, DevState state)
     COMM_PAKT send_buffer = {0};
     send_buffer.CMD = CMDType::SVR_NOTIFY;
     send_buffer.payload.STATE = state;
-
+    if( state == DevState::WITHIN )
+    {
+        std::cout<<"Device Within Range"<<std::endl;
+    }
     write( fd, (void*)&send_buffer, sizeof(COMM_PAKT) );
 }

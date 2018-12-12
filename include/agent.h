@@ -14,6 +14,13 @@ using namespace std;
 #define BLUE_ECONN -2
 #define BLUE_EREAD -3
 
+typedef struct _DEVICE_HANDLE
+{
+    int blue_sock;
+    int dev_discriptor;
+    struct hci_conn_info_req* cr;
+}DEVICE_HANDLE;
+
 class CBlueAgent
 {
     public:
@@ -40,9 +47,9 @@ class CBlueAgent
 
     private:
 
-    struct hci_conn_info_req *cr;
+    //struct hci_conn_info_req *cr;
     //device discriptor
-    int m_dd; 
+    //int m_dd; 
     
     std::unordered_map<int, devInfo> m_devList;
 
@@ -56,7 +63,9 @@ class CBlueAgent
     
     void onNotify(int fd, DevState state);
 
-    int InitBlueDev(int fd);
+    int InitBlueDev(int fd, DEVICE_HANDLE& dh);
 
-    int GetRSSI(int& rssi);
+    void DisposeHandle(DEVICE_HANDLE& dh);
+
+    int GetRSSI(int& rssi, DEVICE_HANDLE& dh);
 };
