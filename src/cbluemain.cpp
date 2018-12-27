@@ -15,6 +15,7 @@
 #include <bluetooth/l2cap.h>
 
 #include "helper.h"
+#include "agent.h"
 #include "BlueServer.h"
 
 using namespace std;
@@ -39,14 +40,18 @@ int main(int argc, char **argv)
     
     if(argc <1)
     {
-        cout<<"Please Input Bluetooth Address..."<<endl;
+        cout<<"Invalid Parameter..."<<endl;
     }
+
+    bool bServer = false;
+    bool bClient = false;
    
-    while ((ch = getopt(argc, argv, "m:b:vh?")) != -1)
+    while ((ch = getopt(argc, argv, "m:b:dvh?")) != -1)
     {
         switch (ch) {
             case 'b':
             {
+                bClient = true;
                 strDevAddr = optarg;
                 if(strDevAddr[0] == ' ')
                 {
@@ -61,6 +66,11 @@ int main(int argc, char **argv)
                 {
                     g_strEncrptKey = g_strEncrptKey.substr(1,g_strEncrptKey.length());
                 }
+                break;
+            }
+            case 'd':
+            {
+                bServer = true;
                 break;
             }
         }
@@ -78,15 +88,38 @@ int main(int argc, char **argv)
     printf("%s", szText2);
     //getchar();
 
-    CBlueServer* pServer = &CBlueServer::getInstance();
     
-
-    if( !m_helper.CheckAddr( strDevAddr.c_str() ))
+    
+    if( bClient && bServer )
     {
-        cout<<"Bluetooth Address Invalid."<<endl;
+        cout<<"Wrong params."<<endl;
     }
-    else
+
+    if( bClient )
     {
+        if( !m_helper.CheckAddr( strDevAddr.c_str() ))
+        {
+            cout<<"Bluetooth Address Invalid."<<endl;
+        }
+        else
+        {
+            CBlueAgent* pAgent = &CBlueAgent::getInstance();
+            
+            int nRet = 0;
+            int fd = 1;
+            DEVICE_HANDLE dev_handle = { 0 };
+
+            while(true)
+            {
+  
+                        
+            }
+            
+        }
+    }
+    else if( bServer )
+    {
+        CBlueServer* pServer = &CBlueServer::getInstance();
         pServer->InitServer();
         pServer->Run();
     }

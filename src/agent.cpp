@@ -99,7 +99,7 @@ void CBlueAgent::run()
                         int rssi = -255;
                         nRet = GetRSSI(rssi, dev_handle);
 
-                        if( (nRet == BLUE_ECONN) || (rssi < -10) )
+                        if( (nRet == BLUE_ECONN) || (rssi < -6) )
                         {
                             if(state != DevState::OUTOFRANGE)
                             {

@@ -43,8 +43,6 @@ class CBlueAgent
     void run();
     void stop();
 
-    
-
     private:
 
     //struct hci_conn_info_req *cr;
