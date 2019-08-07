@@ -3,6 +3,8 @@
 #include <netinet/in.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <thread>
+#include <mutex> 
 
 #include "helper.h"
 
@@ -10,9 +12,15 @@
 
 using namespace std;
 
-#define BLUE_ERROR -1
-#define BLUE_ECONN -2
-#define BLUE_EREAD -3
+// #define BLUE_ERROR -1
+// #define BLUE_ECONN -2
+// #define BLUE_EREAD -3
+
+enum BluetoothErrors{
+    ERROR = -1,
+    ECONN = -2,
+    EREAD = -3
+};
 
 typedef struct _DEVICE_HANDLE
 {
@@ -53,6 +61,7 @@ class CBlueAgent
 
     //unhandled device
     std::stack<int> m_devNew;
+    std::mutex mutex;
 
     //thread indicator
     bool m_bContinue;

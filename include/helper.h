@@ -1,10 +1,12 @@
-#include <string.h>
+#include <cstring>
 
 #include <openssl/evp.h>
 #include <openssl/aes.h>
 #include <openssl/err.h>
-
 #include <regex>
+
+#include "rapidjson/filereadstream.h"
+#include "rapidjson/document.h"
 
 #pragma once
 
@@ -23,11 +25,14 @@ class CHelper
     }
 
     bool CheckAddr(const char *address);
+
+    void ParseConfig(std::string config);
     
   private:
     /* A 256 bit key */
     unsigned char m_key[128];
     AES_KEY enc_key, dec_key;
+    rapidjson::Document m_config;
 };
 
 struct COMM_PAKT{

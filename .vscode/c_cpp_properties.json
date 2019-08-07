@@ -4,14 +4,13 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "${workspaceFolder}/include/*.h"
+                "${workspaceFolder}/include/**"
             ],
             "defines": [],
-            "compilerPath": "/usr/bin/gcc",
+            "compilerPath": "/usr/bin/g++",
             "cStandard": "c11",
             "cppStandard": "c++17",
             "intelliSenseMode": "clang-x64",
-            "clang.completion.enable":true,
             "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "configurationProvider": "vector-of-bool.cmake-tools"
         }

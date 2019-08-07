@@ -1,7 +1,8 @@
-#include <signal.h>
+#include <csignal>
 #include <poll.h>
 
 #include "BlueServer.h"
+#include "agent.h"
 
 
 CBlueServer::CBlueServer( )
@@ -49,8 +50,6 @@ bool CBlueServer::InitServer()
     listen(m_Serverfd,5);
     bInit = true;
 
-    m_pAgent = &CBlueAgent::getInstance();
-
     return bInit;
 }
 
@@ -58,8 +57,7 @@ bool CBlueServer::Run()
 {
     struct sockaddr_in cli_addr;
     socklen_t clilen = sizeof(cli_addr);
-    stack<std::thread*> threadlist;
-
+   
     m_sockets.clear();
 
     thread bt(
@@ -92,7 +90,7 @@ bool CBlueServer::Run()
         else
         {
             m_sockets.push_back(clientfd);
-            m_bNewfd = true;
+            m_Newfd = true;
         }
     }
 
@@ -123,18 +121,20 @@ void CBlueServer::polling( )
 
         struct pollfd pollfds[fd_size];  
 
-        //设置监控sockfd
+        //polling sockfd
         int index = 0; 
         for( auto fd : m_sockets )
         {
             pollfds[index].fd = fd;
             pollfds[index].events = POLLIN|POLLRDHUP;    
             index++;
-            if( index>0 ) m_bNewfd = false;
+
+            if( index>0 ) 
+                m_Newfd = false;
         }
-                 //设置监控的事件  
-    
-        while( !m_bNewfd && (index != 0) )
+                  
+        //set event id 
+        while( !m_Newfd && (index != 0) )
         { 
             int poll_val = poll( pollfds, fd_size, timeout);
             if( poll_val >0 )
@@ -180,14 +180,14 @@ void CBlueServer::polling( )
 
                                     reply.CMD = CMDType::ACK;
 
-                                    m_pAgent->addDevice(clientfd, buffer.payload.LISTEN_ADDR);
+                                    CBlueAgent::getInstance().addDevice(clientfd, buffer.payload.LISTEN_ADDR);
                                     n = write(clientfd, (void*)&reply, sizeof(COMM_PAKT));
                                     if (n < 0)
                                     {
                                         perror("ERROR writing to socket");
                                         wait_for_client = false;
                                     
-                                        m_pAgent->removeDevice(clientfd);
+                                        CBlueAgent::getInstance().removeDevice(clientfd);
                                         shutdown(clientfd, SHUT_RDWR);
                                         close(clientfd);
                                     }
@@ -207,7 +207,7 @@ void CBlueServer::polling( )
 
                                     wait_for_client = false;
                                     
-                                    m_pAgent->removeDevice(clientfd);
+                                    CBlueAgent::getInstance().removeDevice(clientfd);
                                     shutdown(clientfd, SHUT_RDWR);
                                     close(clientfd);
                                     break;
@@ -221,7 +221,7 @@ void CBlueServer::polling( )
                     else if( (pollfds[i].revents & (POLLRDHUP|POLLNVAL|POLLERR) ) != 0 )
                     {
                         //connection down
-                        m_pAgent->removeDevice(clientfd);
+                        CBlueAgent::getInstance().removeDevice(clientfd);
                         //shutdown(clientfd, SHUT_RDWR);
                         close(clientfd);
                         

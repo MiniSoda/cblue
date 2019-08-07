@@ -25,6 +25,7 @@ void CBlueAgent::addDevice(int fd, unsigned char* pszAddr)
     }
     else
     {
+        std::lock_guard<std::mutex> lock(mutex);
         devInfo dev;
         dev.fd = fd;
         memcpy(dev.LISTEN_ADDR, pszAddr, 30);
@@ -51,6 +52,7 @@ void CBlueAgent::run()
 {
     while(m_bContinue)
     {
+        int tmp = m_devNew.size();
         while( m_devNew.size()!= 0 )
         {
             //add dev to listen queue

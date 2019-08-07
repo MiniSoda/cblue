@@ -1,5 +1,6 @@
 {
     "files.associations": {
+        "*.idl": "xml",
         "iostream": "cpp",
         "array": "cpp",
         "*.tcc": "cpp",
@@ -40,9 +41,16 @@
         "__config": "cpp",
         "__nullptr": "cpp",
         "cstddef": "cpp",
-        "thread": "cpp"
+        "thread": "cpp",
+        "csignal": "cpp",
+        "cstdarg": "cpp",
+        "chrono": "cpp",
+        "optional": "cpp",
+        "ratio": "cpp",
+        "cinttypes": "cpp"
     },
     "C_Cpp.errorSquiggles": "Disabled",
     "C_Cpp.intelliSenseEngineFallback": "Disabled",
-    "editor.tabSize": 4
+    "editor.tabSize": 4,
+    "clangd.arguments": ["-log=verbose", "-pretty", "--background-index", "--compile-commands-dir=/home/zheng/cblue/build/"]
 }

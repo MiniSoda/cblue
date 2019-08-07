@@ -1,3 +1,4 @@
+#include "agent.h"
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -7,8 +8,9 @@
 
 #include <string>
 #include <thread>
+#include <memory>
 
-#include "agent.h"
+
 
 class CBlueServer
 {
@@ -27,12 +29,9 @@ public:
 private:
     const short PORT = 8168;
     int m_Serverfd, pid;
-    bool m_bNewfd;
+    bool m_Newfd;
     deque<int> m_sockets;
-    
-    CBlueAgent* m_pAgent;
-    
+  
     void polling();
-
     CBlueServer( );
 };

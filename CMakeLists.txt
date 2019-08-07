@@ -6,6 +6,7 @@ project (blueAgent)
 set (CBlue_VERSION_MAJOR 1)
 set (CBlue_VERSION_MINOR 0)
 set (CMAKE_CXX_STANDARD 14)
+set (CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(SOURCE_FILES src/cbluemain.cpp 
                 src/helper.cpp 

@@ -1,10 +1,10 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 
-#include <stdio.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <stdbool.h>
+#include <cstdio>
+#include <cstdint>
+#include <cstdlib>
+#include <cstdbool>
 #include <iostream>
 #include <unistd.h>
 #include <regex>
@@ -73,6 +73,14 @@ int main(int argc, char **argv)
                 bServer = true;
                 break;
             }
+            case 'c':
+            {
+                std::string config;
+                config = optarg;
+                m_helper.ParseConfig(config);
+                
+                break;
+            }
         }
     }
 
@@ -103,25 +111,20 @@ int main(int argc, char **argv)
         }
         else
         {
-            CBlueAgent* pAgent = &CBlueAgent::getInstance();
+            CBlueAgent& Agent = CBlueAgent::getInstance();
             
             int nRet = 0;
             int fd = 1;
             DEVICE_HANDLE dev_handle = { 0 };
 
-            while(true)
-            {
-  
                         
-            }
-            
         }
     }
     else if( bServer )
     {
-        CBlueServer* pServer = &CBlueServer::getInstance();
-        pServer->InitServer();
-        pServer->Run();
+        CBlueServer& Server = CBlueServer::getInstance();
+        Server.InitServer();
+        Server.Run();
     }
 
 }
