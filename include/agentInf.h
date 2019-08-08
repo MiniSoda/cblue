@@ -14,12 +14,11 @@ public:
         m_fileDescriptor(0),
         m_state(DeviceState::NIL)
     {
-
-
-
+        
     };
+
     virtual ~AgentInterface(){};
-    virtual DeviceState getAgentState() = 0;
+    //virtual DeviceState getAgentState() = 0;
     virtual void init(int) = 0;
     
     virtual void SetAgentHandler(std::map<DeviceState,std::function<void()>> handlers )
@@ -27,7 +26,7 @@ public:
         m_Handlers = handlers;
     };
     
-    virtual void updateState(const DeviceState& state)
+    virtual void UpdateState(const DeviceState& state)
     {
         if( m_state != state )
         {
