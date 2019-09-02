@@ -1,12 +1,17 @@
-cmake_minimum_required (VERSION 3.7)
+cmake_minimum_required (VERSION 3.10)
 
 project (blueAgent)
 
 #version number
 set (CBlue_VERSION_MAJOR 1)
 set (CBlue_VERSION_MINOR 0)
-set (CMAKE_CXX_STANDARD 14)
+
+set (CMAKE_CXX_STANDARD 17)
+set (CMAKE_CXX_STANDARD_REQUIRED ON)
 set (CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+set (CMAKE_C_COMPILER clang)
+set (CMAKE_CXX_COMPILER clang++)
 
 set(SOURCE_FILES src/cbluemain.cpp 
                 src/helper.cpp              
@@ -23,10 +28,12 @@ target_include_directories(${PROJECT_NAME} PRIVATE include)
 
 # Indicate which libraries to include during the link process.
 target_link_libraries (${PROJECT_NAME} 
+                stdc++fs
                 pthread
                 bluetooth 
                 ssl 
                 crypto
+                curl
                 )
 
 add_subdirectory(test)

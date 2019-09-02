@@ -4,11 +4,38 @@
 #include <openssl/aes.h>
 #include <openssl/err.h>
 #include <regex>
+#include <vector>
+#include <string>
+#include <iostream>
+
+#include <curl/curl.h>
 
 #include "rapidjson/filereadstream.h"
 #include "rapidjson/document.h"
 
 #pragma once
+
+
+const static std::string DeviceLabel = "device";
+const static std::string ThresLabel = "Threshold";
+const static std::string IntervalLabel = "Interval";
+
+struct config
+{
+  std::vector<std::string> devices;
+  int Threshold;
+  int Interval;
+
+  std::string ConnectionString;
+
+  config(){
+    devices.reserve(10);
+    Threshold = 0;
+    Interval = 10;
+
+    ConnectionString = "";
+  }
+};
 
 class CHelper
 {
@@ -26,7 +53,9 @@ class CHelper
 
     bool CheckAddr(const char *address);
 
-    void ParseConfig(std::string config);
+    config ParseConfig(std::string config);
+
+    static bool PostMessage(const std::string& message);
     
   private:
     /* A 256 bit key */
