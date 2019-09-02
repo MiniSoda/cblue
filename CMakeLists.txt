@@ -9,12 +9,10 @@ set (CMAKE_CXX_STANDARD 14)
 set (CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(SOURCE_FILES src/cbluemain.cpp 
-                src/helper.cpp 
-                src/BlueServer.cpp 
-                src/agent.cpp 
-                include/BlueServer.h 
+                src/helper.cpp              
+                src/hciManager.cpp         
                 include/helper.h 
-                include/agent.h
+                include/hciManager.h
                 )
 
 #indicate the entry point for the executable

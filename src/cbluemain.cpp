@@ -1,3 +1,4 @@
+#include <memory>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 
@@ -15,8 +16,7 @@
 #include <bluetooth/l2cap.h>
 
 #include "helper.h"
-#include "agent.h"
-#include "BlueServer.h"
+#include "hciManager.h"
 
 using namespace std;
 
@@ -96,35 +96,31 @@ int main(int argc, char **argv)
     printf("%s", szText2);
     //getchar();
 
-    
-    
-    if( bClient && bServer )
-    {
-        cout<<"Wrong params."<<endl;
-    }
+    std::function<void (std::string& info)> oneFunc = [] (std::string& info){
+        cout<< "Nil" << endl;
+        cout<< info << endl;
+    };   
 
-    if( bClient )
-    {
-        if( !m_helper.CheckAddr( strDevAddr.c_str() ))
-        {
-            cout<<"Bluetooth Address Invalid."<<endl;
-        }
-        else
-        {
-            CBlueAgent& Agent = CBlueAgent::getInstance();
-            
-            int nRet = 0;
-            int fd = 1;
-            DEVICE_HANDLE dev_handle = { 0 };
+    std::function<void (std::string& info)> twoFunc = [] (std::string& info){
+        cout<< "Weak" << endl;
+        cout<< info << endl;
+    };   
 
-                        
-        }
-    }
-    else if( bServer )
-    {
-        CBlueServer& Server = CBlueServer::getInstance();
-        Server.InitServer();
-        Server.Run();
-    }
+    std::function<void (std::string& info)> threeFunc = [] (std::string& info){
+        cout<< "Within" << endl;
+        cout<< info << endl;
+    };   
 
+    std::function<void (std::string& info)> fourFunc = [] (std::string& info){
+        cout<< "Error" << endl;
+        cout<< info << endl;
+    };   
+
+    HciManager hci(oneFunc,twoFunc,threeFunc,fourFunc);
+    hci.Init(0, 10);
+    hci.addDevice("F0:99:B6:92:84:E9");
+    hci.addDevice("E0:AC:CB:EF:BC:B9");
+    //hci.SetPollInterval(10);
+
+    hci.StartService();
 }

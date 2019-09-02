@@ -49,9 +49,9 @@ struct COMM_PAKT{
 
 enum ClientType { CREDENTIAL = 0, TRAYICON };
 enum CMDType { CLI_REGISTER = 0, CLI_INQUIRE, CLI_EXIT,SVR_NOTIFY, ACK};
-enum DevState { OUTOFRANGE=0, WITHIN, UNKNOWN };
+//enum DevState { OUTOFRANGE=0, WITHIN, UNKNOWN };
 
-
+/*
 struct devInfo{
   
   int fd;
@@ -65,3 +65,4 @@ struct devInfo{
     state = DevState::UNKNOWN;
   }
 };
+*/

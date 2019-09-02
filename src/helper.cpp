@@ -48,11 +48,11 @@ bool CHelper::CheckAddr(const char *address)
     return bCheck;
 }
 
-void ParseConfig(std::string config)
+void CHelper::ParseConfig(std::string config)
 {
     FILE* fp = fopen(config.c_str(), "rb"); // non-Windows use "r"
     char readBuffer[65536];
     rapidjson::FileReadStream is(fp, readBuffer, sizeof(readBuffer));
-    m_config.ParseStream(is);
+    //m_config.ParseStream(is);
     fclose(fp);
 }

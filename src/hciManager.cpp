@@ -5,7 +5,6 @@
 #include <chrono>
 #include <utility>
 
-#include <bluetooth/hci_lib.h>
 #include "hciManager.h"
 
 
@@ -35,8 +34,8 @@ void HciManager::StartService()
 {
     std::vector<std::thread> threads;
 
-    std::function<bool(const std::string& address)> thread_handler =
-        [&](const std::string& fd) -> bool
+    std::function<void(const std::string& address)> thread_handler =
+        [&](const std::string& fd)
         {
             bool connected = false;
             
@@ -61,45 +60,53 @@ void HciManager::StartService()
                     connected = Connect(fd,error);
                 }
                
-                if( error == errorState::EBLUE )
+                if( connected )
                 {
-                    state = SignalState::NIL;
-                    UpdateState( fd, state );
-                }
-                else if( error == errorState::ENOTFOUND )
-                {
-                    std::this_thread::sleep_for(std::chrono::seconds(m_pollInterval));
-                    continue;
-                }
+                    int rssi = -255;
+                    errorState readState = errorState::EUNDEFINED;
+                    readRSSI(fd, rssi, readState);
 
-                int rssi = -255;
-                errorState readState = errorState::EUNDEFINED;
-                readRSSI(fd, rssi, readState);
-
-                if(readState == errorState::EBLUE) 
-                { 
-                    state = SignalState::NIL;
-                    UpdateState(fd, state);
-                    
-                    Clean( fd );
-                    connected = false;
-                }
-                else if ( rssi < m_signalThreshold ) {
-                    state = SignalState::WEAKSIG;
-                    UpdateState(fd, state);
-                }
-                else
+                    if(readState == errorState::EBLUE) 
+                    { 
+                        state = SignalState::NIL;
+                        UpdateState(fd, state);
+                        
+                        Clean( fd );
+                        connected = false;
+                    }
+                    else if ( rssi < m_signalThreshold ) {
+                        state = SignalState::WEAKSIG;
+                        UpdateState(fd, state);
+                    }
+                    else
+                    {
+                        state = SignalState::WITHIN;
+                        UpdateState(fd, state);
+                    }  
+                }else
                 {
-                    state = SignalState::WITHIN;
-                    UpdateState(fd, state);
-                }  
+                    if( error == errorState::ENOTFOUND )
+                    {
+                        Clean(fd);
+                        std::this_thread::sleep_for(std::chrono::seconds(m_pollInterval));
+                        continue;
+                    }
+                    else if ( error == errorState::EHCI ) {
+                        continue;
+                    }
+                    else if ( error == errorState::EIOCTL ) {
+                        Clean(fd);
+                        continue;
+                    }
+                }
+                                
                 std::this_thread::sleep_for(std::chrono::seconds(m_pollInterval));
             }
         };
        
         for( auto endpoint : m_devices )
         {
-            threads.push_back( std::thread(thread_handler(endpoint)));
+            threads.push_back( std::thread(thread_handler,endpoint) );
         }
 
         for( auto& t : threads )
@@ -122,15 +129,16 @@ bool HciManager::Connect(std::string address, errorState& state)
     
     if( deviceDes != m_DeviceDes.end() )
     {
-        auto endpoint = deviceDes->second;
+        auto& endpoint = deviceDes->second;
         
         if( endpoint.handle == 0)
         {
-            if ((endpoint.handle = (hci_conn_info_req *)malloc(sizeof(struct hci_conn_info_req) + sizeof(struct hci_conn_info))) == NULL)
+            endpoint.handle = (hci_conn_info_req *)malloc(sizeof(struct hci_conn_info_req) + sizeof(struct hci_conn_info));
+            if ( endpoint.handle == NULL)
             {
                 perror("malloc");
-                state = errorState::EHCI;
             }
+            state = errorState::EHCI;
         }
         else 
         {
@@ -150,19 +158,22 @@ bool HciManager::Connect(std::string address, errorState& state)
                 perror("Could not connect to dev");
                 state = errorState::ENOTFOUND;
             }
-
-            bacpy(&endpoint.handle->bdaddr, &addr.l2_bdaddr);
-            endpoint.handle->type = ACL_LINK;
-
-            if ( ioctl(m_hci, HCIGETCONNINFO, (unsigned long)(endpoint.handle)) < 0 )
-            {
-                perror("Could not get connection info");
-                state = errorState::EHCI;
-            }
             else
             {
-                result = true;
-            }
+                bacpy(&endpoint.handle->bdaddr, &addr.l2_bdaddr);
+                endpoint.handle->type = ACL_LINK;
+
+                if ( ioctl(m_hci, HCIGETCONNINFO, (unsigned long)endpoint.handle ) < 0 )
+                {
+                    perror("Could not get connection info");
+                    state = errorState::EIOCTL;
+                }
+                else
+                {
+                    result = true;
+                    state = errorState::EUNDEFINED;
+                }
+            }            
         }
     }
     else  
@@ -191,11 +202,14 @@ void HciManager::readRSSI(const std::string& address, int& rssi, errorState& sta
 void HciManager::Clean(std::string address)
 {
     auto endpoint = m_DeviceDes.find( address );
-    auto deviceDes = endpoint->second;
+    auto& deviceDes = endpoint->second;
 
-    close( deviceDes.bt_sock );
-    free( deviceDes.handle );
-    hci_close_dev( deviceDes.fd );
+    if( deviceDes.bt_sock != 0)
+        close( deviceDes.bt_sock );
+    if( deviceDes.handle != 0)
+        free( deviceDes.handle );
+    if( deviceDes.fd!= 0 )
+        hci_close_dev( deviceDes.fd );
     
     deviceDes.bt_sock = 0;
     deviceDes.handle = 0;
@@ -241,7 +255,8 @@ std::vector<std::string> HciManager::listConnections( ) const
 
 void HciManager::EventHandler(std::string fd, const SignalState& state)
 {
-    switch(state){
+    switch(state)
+    {
         case SignalState::NIL:
         {
             m_onNilHandler(fd);

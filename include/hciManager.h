@@ -2,6 +2,8 @@
 #include <netinet/in.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <unistd.h>
+#include <sys/ioctl.h>
 
 #include <memory>
 #include <thread>
@@ -28,6 +30,7 @@ enum SignalState{
 enum errorState{
     EUNDEFINED,
     EHCI,
+    EIOCTL,
     EBLUE,
     ENOTFOUND
 };
@@ -88,6 +91,7 @@ public:
         }
     };
     
+    // threshold , interval
     bool Init(int threshold,int pollInterval);
     
     void StartService();
