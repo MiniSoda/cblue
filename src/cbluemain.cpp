@@ -6,121 +6,114 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstdbool>
+#include <ctime>
 #include <iostream>
 #include <unistd.h>
 #include <regex>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/hci_lib.h>
-#include <bluetooth/l2cap.h>
+#include <string>
+#include <filesystem>
+#include <rapidjson/document.h>
 
 #include "helper.h"
 #include "hciManager.h"
 
-using namespace std;
-
-//#define HCI_MAX_DEV 64
-
-int error = 0;
-bool bMainLoop = true;
-
-std::string g_strEncrptKey;
 
 int main(int argc, char **argv)
 { 
-    CHelper m_helper;
-    g_strEncrptKey = "";
-    char* pszEnc = nullptr;
-    char* pszDev = nullptr;
-
-    int ch;
-    std::string strDevAddr ="";
-    
-    
-    if(argc <1)
-    {
-        cout<<"Invalid Parameter..."<<endl;
+  CHelper m_helper;
+  
+  int ch;
+  std::string path = "";
+  
+  if(argc <1)
+  {
+    std::cout<<"Invalid Parameter..."<<std::endl;
+  }
+ 
+  while ((ch = getopt(argc, argv, "c:h?")) != -1)
+  {
+    switch (ch) {
+      case 'c':
+      {
+        path = optarg;
+        break;
+      }
     }
-
-    bool bServer = false;
-    bool bClient = false;
-   
-    while ((ch = getopt(argc, argv, "m:b:dvh?")) != -1)
-    {
-        switch (ch) {
-            case 'b':
-            {
-                bClient = true;
-                strDevAddr = optarg;
-                if(strDevAddr[0] == ' ')
-                {
-                    strDevAddr = strDevAddr.substr(1,strDevAddr.length());
-                }
-                break;
-            }
-            case 'm':
-            {
-                g_strEncrptKey = optarg;
-                if(g_strEncrptKey[0] == ' ')
-                {
-                    g_strEncrptKey = g_strEncrptKey.substr(1,g_strEncrptKey.length());
-                }
-                break;
-            }
-            case 'd':
-            {
-                bServer = true;
-                break;
-            }
-            case 'c':
-            {
-                std::string config;
-                config = optarg;
-                m_helper.ParseConfig(config);
-                
-                break;
-            }
-        }
-    }
-
-    m_helper.setEncrptKey(g_strEncrptKey.c_str());
-
-    unsigned char szText1[128] = {0};
-    unsigned char szText2[128] = {0};
-
-    unsigned char szGreetings[30] = "Hello Cipher!";
-    m_helper.cipherText( szText1, szGreetings, 13);
-    m_helper.decipherText( szText2, szText1, 13);
+  }
+  
+  if(path.at(0) == '/')
+  {
     
-    printf("%s", szText2);
-    //getchar();
+  }
+  else
+  {
+    std::string cwd = std::filesystem::current_path();
+    path = cwd + '/' + path;
+  }
 
-    std::function<void (std::string& info)> oneFunc = [] (std::string& info){
-        cout<< "Nil" << endl;
-        cout<< info << endl;
-    };   
+  std::cout<< path << std::endl;
+  struct config conf = m_helper.ParseConfig(path);
 
-    std::function<void (std::string& info)> twoFunc = [] (std::string& info){
-        cout<< "Weak" << endl;
-        cout<< info << endl;
-    };   
+  std::function<void (std::string& info)> NilFunc = [&] (std::string& info)
+  {
+    std::string message = "";
+    char text[4096] = {0};
+    std::string name = conf.devices[info];
 
-    std::function<void (std::string& info)> threeFunc = [] (std::string& info){
-        cout<< "Within" << endl;
-        cout<< info << endl;
-    };   
+    std::cout<< name << ":" << info << " 未发现设备" <<std::endl;
+    sprintf( text, MessageFormat.c_str(), name.c_str(), "未发现设备");
+    message = text;
+    CHelper::PostMessage(message, conf.users); 
+  };
 
-    std::function<void (std::string& info)> fourFunc = [] (std::string& info){
-        cout<< "Error" << endl;
-        cout<< info << endl;
-    };   
+  std::function<void (std::string& info)> WeakFunc = [&] (std::string& info)
+  {
+    std::string message = "";
+    char text[4096] = {0};
+    std::string name = conf.devices[info];
 
-    HciManager hci(oneFunc,twoFunc,threeFunc,fourFunc);
-    hci.Init(0, 10);
-    hci.addDevice("F0:99:B6:92:84:E9");
-    hci.addDevice("E0:AC:CB:EF:BC:B9");
-    //hci.SetPollInterval(10);
+    std::cout<< name << ":" << info << " 弱信号" <<std::endl;
+    sprintf( text, MessageFormat.c_str(), name.c_str(), "弱信号");
+    message = text;
+    CHelper::PostMessage(message, conf.users); 
+  };   
 
+  std::function<void (std::string& info)> WithinFunc = [&] (std::string& info)
+  {
+    std::string message = "";
+    char text[4096] = {0};
+    std::string name = conf.devices[info];
+
+    std::cout<< name << ":" << info << " 在家" <<std::endl;
+    sprintf( text, MessageFormat.c_str(), name.c_str(), "在家");
+    message = text;
+    CHelper::PostMessage(message, conf.users); 
+  };   
+
+  std::function<void (std::string& info)> ErrorFunc = [&] (std::string& info)
+  {
+    std::string message = "";
+    char text[4096] = {0};
+    std::string name = conf.devices[info];
+
+    std::cout<< name << ":" << info << " 错误" <<std::endl;
+    sprintf( text, MessageFormat.c_str(), name.c_str(), "错误");
+    message = text;
+    CHelper::PostMessage(message, conf.users); 
+  };   
+
+  HciManager hci(NilFunc, WeakFunc, WithinFunc, ErrorFunc);
+  hci.Init(0, 10);
+
+  for(auto device : conf.devices)
+  {
+    hci.addDevice(device.first);
+  }
+
+  {
+    std::time_t result = std::time(nullptr);
+    
     hci.StartService();
+  }
 }

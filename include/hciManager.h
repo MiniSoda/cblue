@@ -55,14 +55,14 @@ class HciManager{
 public:
     HciManager() = delete;
     HciManager( std::function<void (std::string&)> NilHandler,
-            std::function<void (std::string&)> WeakHandler,
-            std::function<void (std::string&)> WithinHandler,
-            std::function<void (std::string&)> ErrorHandler 
-        ) :
-        m_onNilHandler(NilHandler),
-        m_onWeakSigHandler(WeakHandler),
-        m_onWithinHandler(WithinHandler),
-        m_onErrorHandler(ErrorHandler)
+                std::function<void (std::string&)> WeakHandler,
+                std::function<void (std::string&)> WithinHandler,
+                std::function<void (std::string&)> ErrorHandler 
+              ):
+    m_onNilHandler(NilHandler),
+    m_onWeakSigHandler(WeakHandler),
+    m_onWithinHandler(WithinHandler),
+    m_onErrorHandler(ErrorHandler)
     {
         m_threadContinue = true;
     };

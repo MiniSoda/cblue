@@ -4,9 +4,11 @@
 #include <openssl/aes.h>
 #include <openssl/err.h>
 #include <regex>
+#include <map>
 #include <vector>
 #include <string>
 #include <iostream>
+#include <chrono>
 
 #include <curl/curl.h>
 
@@ -17,23 +19,35 @@
 
 
 const static std::string DeviceLabel = "device";
+const static std::string UsersLabel = "userId";
 const static std::string ThresLabel = "Threshold";
 const static std::string IntervalLabel = "Interval";
+const static std::string ConnLabel = "Connection";
+const static std::string TokenLabel= "Token";
+const static std::string SchedLabel= "ScheduleTime";
+
+const static std::string MessageFormat= "推送消息: {%s} 的设备信号状态 {%s}";
 
 struct config
 {
-  std::vector<std::string> devices;
+  std::map<std::string,std::string> devices;
+  std::vector<int> users;
   int Threshold;
   int Interval;
 
   std::string ConnectionString;
+  std::string Token;
+  std::string StartTime;
+  std::string EndTime;
 
   config(){
-    devices.reserve(10);
     Threshold = 0;
     Interval = 10;
 
     ConnectionString = "";
+    Token = "";
+    StartTime = "";
+    EndTime = "";
   }
 };
 
@@ -54,44 +68,20 @@ class CHelper
     bool CheckAddr(const char *address);
 
     config ParseConfig(std::string config);
+    bool isWithinSchedule( );
 
-    static bool PostMessage(const std::string& message);
+    static bool isWithinSchedule( std::chrono::system_clock::time_point s, std::chrono::system_clock::time_point e);
+
+    static bool PostMessage(const std::string& message, std::string userid);
+    static bool PostMessage(const std::string& message, std::vector<int> userids);
     
   private:
     /* A 256 bit key */
     unsigned char m_key[128];
     AES_KEY enc_key, dec_key;
     rapidjson::Document m_config;
+    static std::string connectionString;
+    static std::string token;
+    std::string startTime;
+    std::string endTime;
 };
-
-struct COMM_PAKT{
-  unsigned char HEADER[4];
-  unsigned char CMD;
-  unsigned char res[3];
-
-  struct PAYLOAD{
-    unsigned char CLIENT_TYPE;
-    unsigned char STATE;
-    unsigned char LISTEN_ADDR[30];
-  }payload;
-};
-
-enum ClientType { CREDENTIAL = 0, TRAYICON };
-enum CMDType { CLI_REGISTER = 0, CLI_INQUIRE, CLI_EXIT,SVR_NOTIFY, ACK};
-//enum DevState { OUTOFRANGE=0, WITHIN, UNKNOWN };
-
-/*
-struct devInfo{
-  
-  int fd;
-  char LISTEN_ADDR[30];
-  DevState state;
-
-  devInfo()
-  {
-    fd =0;
-    memset( LISTEN_ADDR,0,30);
-    state = DevState::UNKNOWN;
-  }
-};
-*/

@@ -20,8 +20,14 @@ cmake .. && make all
 
 ### Usage ###
 ```bash
-./blueAgent -b 12:34:56:78:90:AB
+./blueAgent -c config.json 
 ```
+
+### ToDo ###
+1. Add the feature to assign scheduled run time.
+2. Abstracting agent class instead of using callback funcs directly.
+3. Use cond_variable to practice concurrency.
+4. Dig into bluetooth mesh protocol to see if we can access multiple devices to provide more accurate location.
 
 ***Cautions*** 
 

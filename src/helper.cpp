@@ -1,5 +1,13 @@
 #include "helper.h"
+
+#include <chrono>
+#include <iomanip>
+#include <ctime>
 #include <rapidjson/document.h>
+#include <rapidjson/error/error.h>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
+#include <utility>
 
 
 CHelper::CHelper()
@@ -13,14 +21,17 @@ strcpy((char *)m_key, "temporary key");
 
     AES_set_encrypt_key(m_key, 128, &enc_key);
     AES_set_decrypt_key(m_key, 128, &dec_key);
+
+    startTime = "";
+    endTime = "";
 }
-
-
 
 CHelper::~CHelper()
 {
 
 }
+std::string CHelper::connectionString = "";
+std::string CHelper::token = "";
 
 int CHelper::cipherText(unsigned char *cipheredBuff, const unsigned char *szText, size_t size = 0)
 {
@@ -76,10 +87,10 @@ config CHelper::ParseConfig(std::string config)
     {
       if(itr->name.GetString() == DeviceLabel) 
       {
-        for( auto& item : itr->value.GetArray() ) 
+        for(rapidjson::Value::ConstMemberIterator itr1 = itr->value.MemberBegin(); itr1 != itr->value.MemberEnd(); ++itr1)
         {
-          conf.devices.emplace_back(item.GetString());
-        } 
+          conf.devices.emplace( std::make_pair(itr1->name.GetString() ,itr1->value.GetString()) );
+        }
       }
 
       if(itr->name.GetString() == ThresLabel)
@@ -91,24 +102,84 @@ config CHelper::ParseConfig(std::string config)
       {
         conf.Interval = itr->value.GetInt();
       }
+      
+      if(itr->name.GetString() == UsersLabel) 
+      {
+        for(auto& item : itr->value.GetArray())
+        {
+          conf.users.emplace_back(item.GetInt());
+        }
+      }
+
+      if(itr->name.GetString() == ConnLabel) 
+      {
+        CHelper::connectionString = itr->value.GetString();
+      }
+      
+      if(itr->name.GetString() == TokenLabel) 
+      {
+        CHelper::token = itr->value.GetString();
+      }
+
+      if(itr->name.GetString() == SchedLabel) 
+      {
+        conf.StartTime = itr->value.GetArray()[0].GetString();
+        conf.EndTime = itr->value.GetArray()[1].GetString();
+
+        startTime = conf.StartTime;
+        endTime = conf.EndTime;
+      }
+
     }
   }
-  
-  fclose(fp);
 
+  fclose(fp);
   return conf;
 }
 
+bool CHelper::isWithinSchedule( )
+{
+  std::chrono::system_clock::time_point now = std::chrono::system_clock::now(); 
+  std::time_t now_c = std::chrono::system_clock::to_time_t(now);
+  std::put_time(std::localtime(&now_c), "%r");
+  return CHelper::isWithinSchedule();
+}
 
-bool CHelper::PostMessage(const std::string& message)
+bool CHelper::isWithinSchedule( std::chrono::system_clock::time_point s, std::chrono::system_clock::time_point e)
+{
+  bool schedule = false;
+  std::chrono::system_clock::time_point now = std::chrono::system_clock::now(); 
+  if( now > s && now < e)
+  {
+    schedule = true;
+  }
+  return schedule;
+}
+
+bool CHelper::PostMessage(const std::string& message, std::vector<int> userids)
+{
+  rapidjson::Document document;
+  rapidjson::Value list(rapidjson::kArrayType);
+  rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
+  for (auto id : userids)
+    list.PushBack(id, allocator);   // allocator is needed for potential realloc(). 
+
+  rapidjson::StringBuffer buffer;
+  rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+  list.Accept(writer);
+  const char* output = buffer.GetString();
+  return CHelper::PostMessage( message, output );
+}
+
+bool CHelper::PostMessage(const std::string& message, std::string userid)
 {
   CURL *curl;
   CURLcode res;
 
   char raw_message[500] = {0};
   sprintf( raw_message, 
-            R"(payload={"text": "%s", "user_ids": [4] })" , 
-            message.c_str());
+            R"(payload={"text": "%s", "user_ids": %s })" , 
+            message.c_str(), userid.c_str());
 
   std::string payload = raw_message;
 
@@ -121,9 +192,9 @@ bool CHelper::PostMessage(const std::string& message)
     /* First set the URL that is about to receive our POST. This URL can
        just as well be a https:// URL if that is what should receive the
        data. */ 
-    curl_easy_setopt(curl, CURLOPT_URL, "https://nas.imangoo.site:5001/webapi/entry.cgi");
-    //api=SYNO.Chat.External&method=chatbot&version=2&token=%22BrY2JNYksVRYvA0Pm9TAoVvLWt3lhk7upvFT6SYuumiXG6MSqEqwotUNQg65Et8i%22
-    std::string format = "api=SYNO.Chat.External&method=chatbot&version=2&token=%22BrY2JNYksVRYvA0Pm9TAoVvLWt3lhk7upvFT6SYuumiXG6MSqEqwotUNQg65Et8i%22&";
+    curl_easy_setopt(curl, CURLOPT_URL, connectionString.c_str());
+    sprintf( raw_message, "api=SYNO.Chat.External&method=chatbot&version=2&token=%s&", token.c_str());
+    std::string format = raw_message;
     format += payload; 
 
     /* Now specify the POST data */ 
