@@ -113,7 +113,7 @@ void HciManager::StartService()
         {
             if( t.joinable())
             {
-                t.join();
+                t.detach();
             }
         }
 }

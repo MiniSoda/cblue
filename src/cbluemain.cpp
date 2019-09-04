@@ -1,3 +1,4 @@
+#include <chrono>
 #include <memory>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
@@ -8,6 +9,7 @@
 #include <cstdbool>
 #include <ctime>
 #include <iostream>
+#include <iomanip>
 #include <unistd.h>
 #include <regex>
 
@@ -31,7 +33,7 @@ int main(int argc, char **argv)
     std::cout<<"Invalid Parameter..."<<std::endl;
   }
  
-  while ((ch = getopt(argc, argv, "c:h?")) != -1)
+  while ((ch = getopt(argc, argv, "c:ht?")) != -1)
   {
     switch (ch) {
       case 'c':
@@ -39,9 +41,15 @@ int main(int argc, char **argv)
         path = optarg;
         break;
       }
+      case 't':
+      {
+        //m_helper.isWeekday();
+        m_helper.isWithinSchedule();
+        exit(0);
+      }
     }
   }
-  
+
   if(path.at(0) == '/')
   {
     
@@ -111,9 +119,36 @@ int main(int argc, char **argv)
     hci.addDevice(device.first);
   }
 
-  {
-    std::time_t result = std::time(nullptr);
-    
-    hci.StartService();
-  }
+  std::thread t([&](){
+    bool Working = false;
+    while(true)
+    {
+      bool schedule = m_helper.isWithinSchedule();
+      bool weekday = m_helper.isWeekday(); 
+
+      if( schedule && weekday )
+      {
+        if(Working == false)
+        {
+          hci.StartService();
+          Working = true;
+        }
+      }
+      else
+      {
+        auto now = std::chrono::system_clock::now(); 
+        std::time_t now_c = std::chrono::system_clock::to_time_t(now);
+        tm local_tm = *localtime(&now_c);
+        std::cout<< std::setfill('0') <<std::setw(2) <<local_tm.tm_hour<< ":" << local_tm.tm_min << ":" << local_tm.tm_sec << " off the schedule" << std::endl;
+
+        hci.Stop();
+        Working = false;
+      }
+
+      std::this_thread::sleep_for(std::chrono::seconds(conf.Interval));
+    }  
+  });
+
+  if(t.joinable())
+    t.join();    
 }

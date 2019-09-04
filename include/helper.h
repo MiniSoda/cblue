@@ -68,9 +68,8 @@ class CHelper
     bool CheckAddr(const char *address);
 
     config ParseConfig(std::string config);
-    bool isWithinSchedule( );
-
-    static bool isWithinSchedule( std::chrono::system_clock::time_point s, std::chrono::system_clock::time_point e);
+    volatile bool isWithinSchedule( );
+    volatile bool isWeekday( );
 
     static bool PostMessage(const std::string& message, std::string userid);
     static bool PostMessage(const std::string& message, std::vector<int> userids);
@@ -84,4 +83,7 @@ class CHelper
     static std::string token;
     std::string startTime;
     std::string endTime;
+
+    long m_start;
+    long m_end;
 };

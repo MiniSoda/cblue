@@ -3,12 +3,13 @@
 #include <chrono>
 #include <iomanip>
 #include <ctime>
+#include <limits>
 #include <rapidjson/document.h>
 #include <rapidjson/error/error.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
+#include <ratio>
 #include <utility>
-
 
 CHelper::CHelper()
 {
@@ -128,8 +129,18 @@ config CHelper::ParseConfig(std::string config)
 
         startTime = conf.StartTime;
         endTime = conf.EndTime;
-      }
 
+        int sh = stoi(startTime);
+        int sm = stoi(startTime.substr(3));
+        long start = sm + sh*60;
+
+        int eh = stoi(endTime);
+        int em = stoi(endTime.substr(3));
+        long end = em + eh*60;
+
+        m_start = start;        
+        m_end = end;
+      }
     }
   }
 
@@ -137,23 +148,33 @@ config CHelper::ParseConfig(std::string config)
   return conf;
 }
 
-bool CHelper::isWithinSchedule( )
+volatile bool CHelper::isWithinSchedule( )
 {
-  std::chrono::system_clock::time_point now = std::chrono::system_clock::now(); 
+  volatile bool scheduled = false;
+  auto now = std::chrono::system_clock::now(); 
   std::time_t now_c = std::chrono::system_clock::to_time_t(now);
-  std::put_time(std::localtime(&now_c), "%r");
-  return CHelper::isWithinSchedule();
+  tm local_tm = *localtime(&now_c);
+  long h = local_tm.tm_hour;   
+  long m = local_tm.tm_min;   
+  long cur = h*60+m;
+  
+  if( cur >= m_start && cur < m_end )
+  {
+    scheduled = true;
+  }
+
+  return scheduled;
 }
 
-bool CHelper::isWithinSchedule( std::chrono::system_clock::time_point s, std::chrono::system_clock::time_point e)
+volatile bool CHelper::isWeekday( )
 {
-  bool schedule = false;
-  std::chrono::system_clock::time_point now = std::chrono::system_clock::now(); 
-  if( now > s && now < e)
-  {
-    schedule = true;
-  }
-  return schedule;
+  volatile bool weekday = false;
+  auto now = std::chrono::system_clock::now(); 
+  std::time_t now_c = std::chrono::system_clock::to_time_t(now);
+  tm local_tm = *localtime(&now_c);
+  if( local_tm.tm_wday >=1 && local_tm.tm_wday <=5 )
+    weekday = true;
+  return weekday;
 }
 
 bool CHelper::PostMessage(const std::string& message, std::vector<int> userids)
