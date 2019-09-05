@@ -10,8 +10,9 @@ set (CMAKE_CXX_STANDARD 17)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
 set (CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set (CMAKE_C_COMPILER clang)
-set (CMAKE_CXX_COMPILER clang++)
+#set(CLANG_TARGET_TRIPLE armv7a-none-eabi)
+set(CMAKE_CXX_COMPILER clang++)
+
 
 set(SOURCE_FILES src/cbluemain.cpp 
                 src/helper.cpp              

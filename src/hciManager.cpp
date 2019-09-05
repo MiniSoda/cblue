@@ -4,6 +4,7 @@
 #include <thread>
 #include <chrono>
 #include <utility>
+#include <iostream>
 
 #include "hciManager.h"
 
@@ -41,6 +42,7 @@ void HciManager::StartService()
             
             SignalState state = SignalState::NIL;
             errorState error = errorState::EUNDEFINED;
+            std::cout<< "Thread Continue: " << m_threadContinue << std::endl;
 
             while( m_threadContinue )
             {
@@ -113,7 +115,7 @@ void HciManager::StartService()
         {
             if( t.joinable())
             {
-                t.detach();
+                t.join();
             }
         }
 }

@@ -119,8 +119,10 @@ int main(int argc, char **argv)
     hci.addDevice(device.first);
   }
 
-  std::thread t([&](){
+  {
     bool Working = false;
+    std::thread work;
+      
     while(true)
     {
       bool schedule = m_helper.isWithinSchedule();
@@ -130,7 +132,9 @@ int main(int argc, char **argv)
       {
         if(Working == false)
         {
-          hci.StartService();
+          work = std::move(std::thread([&](){
+              hci.StartService();
+            }));
           Working = true;
         }
       }
@@ -141,14 +145,15 @@ int main(int argc, char **argv)
         tm local_tm = *localtime(&now_c);
         std::cout<< std::setfill('0') <<std::setw(2) <<local_tm.tm_hour<< ":" << local_tm.tm_min << ":" << local_tm.tm_sec << " off the schedule" << std::endl;
 
-        hci.Stop();
+        if(Working == true)
+          hci.Stop();
+
+        if(work.joinable())
+          work.join();
         Working = false;
       }
 
       std::this_thread::sleep_for(std::chrono::seconds(conf.Interval));
     }  
-  });
-
-  if(t.joinable())
-    t.join();    
+  }
 }
