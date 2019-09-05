@@ -1,8 +1,5 @@
 #include <cstring>
 
-#include <openssl/evp.h>
-#include <openssl/aes.h>
-#include <openssl/err.h>
 #include <regex>
 #include <map>
 #include <vector>
@@ -16,7 +13,6 @@
 #include "rapidjson/document.h"
 
 #pragma once
-
 
 const static std::string DeviceLabel = "device";
 const static std::string UsersLabel = "userId";
@@ -57,14 +53,6 @@ class CHelper
     CHelper();
     ~CHelper();
 
-    int cipherText(unsigned char *cipheredBuff, const unsigned char *szText, size_t size);
-    int decipherText(unsigned char *decipheredBuff, const unsigned char *szText, size_t size);
-
-    void setEncrptKey(const char* szKey)
-    {
-        strcpy((char*)m_key, szKey);
-    }
-
     bool CheckAddr(const char *address);
 
     config ParseConfig(std::string config);
@@ -75,9 +63,6 @@ class CHelper
     static bool PostMessage(const std::string& message, std::vector<int> userids);
     
   private:
-    /* A 256 bit key */
-    unsigned char m_key[128];
-    AES_KEY enc_key, dec_key;
     rapidjson::Document m_config;
     static std::string connectionString;
     static std::string token;
