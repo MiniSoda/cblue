@@ -72,12 +72,12 @@ void HciManager::StartService()
                     { 
                         state = SignalState::NIL;
                         UpdateState(fd, state);
-                        
                         Clean( fd );
                         connected = false;
                     }
                     else if ( rssi < m_signalThreshold ) {
-                        state = SignalState::WEAKSIG;
+                        //state = SignalState::WEAKSIG;
+                        state = SignalState::WITHIN;
                         UpdateState(fd, state);
                     }
                     else
